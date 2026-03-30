@@ -125,33 +125,40 @@ Agent-native email infrastructure for AI agents.
 
 ## How skills connect
 
-Skills are designed to work together. Here's the typical flow:
+Not sure where to start? Load **email-diagnostics** - it routes you to the right skills based on your situation.
+
+Otherwise, follow the lifecycle:
 
 ```
-Diagnostics
-email-diagnostics  (start here - routes you to the right skills)
-        |
-        v
-Setup                  Deliverability              Sending
-domain-authentication  sender-reputation           transactional-email
-provider-setup    -->  email-warmup           -->  cold-outreach
-                       inbox-placement             email-sequences
-                                                   onboarding-emails
-                                                   notification-design
-
-Content & Quality      Compliance & Safety         Operations
-email-copywriting      email-compliance            bounce-handling
-template-design   -->  suppression-lists      -->  rate-limiting
-spam-filter-avoidance  email-security              webhook-processing
-ab-testing                                         sender-monitoring
-
-                       Inbound                        Inbox
-                       inbound-processing             inbox-providers
-                       reply-classification
-                       thread-management
+                        email-diagnostics
+                      (start here if stuck)
+                               |
+          ┌────────────────────┼─────────────────────┐
+          v                    v                      v
+      Setup              Deliverability           Sending
+  ┌─────────────┐    ┌──────────────────┐    ┌──────────────────┐
+  │ domain-auth │    │ sender-reputation│    │ transactional    │
+  │ provider    │--->│ email-warmup     │--->│ cold-outreach    │
+  │ setup       │    │ inbox-placement  │    │ email-sequences  │
+  └─────────────┘    └──────────────────┘    │ onboarding       │
+                                             │ notifications    │
+          |                    |              └──────────────────┘
+          v                    v                      |
+   Content & Quality    Compliance & Safety           v
+  ┌─────────────────┐  ┌──────────────────┐     Operations
+  │ email-copy      │  │ email-compliance │  ┌──────────────────┐
+  │ template-design │  │ suppression-lists│  │ bounce-handling  │
+  │ spam-filter     │  │ email-security   │  │ rate-limiting    │
+  │ ab-testing      │  └──────────────────┘  │ webhooks         │
+  └─────────────────┘                        │ sender-monitoring│
+                                             └──────────────────┘
+          Inbound                 Inbox
+  ┌──────────────────┐    ┌────────────────┐
+  │ inbound-process  │    │ inbox-providers│
+  │ reply-classif.   │    └────────────────┘
+  │ thread-mgmt      │
+  └──────────────────┘
 ```
-
-Start with **Diagnostics** if you have a problem to solve or aren't sure where to begin. Otherwise, start with **Setup** to get your infrastructure right. Move to **Deliverability** to build reputation. Then tackle **Sending** for your specific use case. The other categories support the entire lifecycle.
 
 ## Contributing
 
