@@ -1,3 +1,9 @@
+---
+name: onboarding-emails
+description: Build welcome and activation email sequences. Use when designing signup flows, driving users to key actions, converting trials to paid, or reducing early churn.
+license: MIT
+---
+
 # Onboarding Emails
 
 Design welcome sequences and activation emails that get new users to their first moment of value.

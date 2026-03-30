@@ -1,3 +1,9 @@
+---
+name: email-sequences
+description: Design automated email sequences and drip campaigns. Use when building onboarding flows, nurture sequences, re-engagement campaigns, or follow-up automation.
+license: MIT
+---
+
 # Email Sequences
 
 Design and run automated email sequences (drip campaigns) that convert without fatiguing recipients or damaging sender reputation.

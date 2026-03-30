@@ -1,3 +1,9 @@
+---
+name: notification-design
+description: Design product notification emails. Use when building activity alerts, digests, status updates, or managing notification frequency and user preferences.
+license: MIT
+---
+
 # Notification Design
 
 Design product notification emails that inform without overwhelming - covering notification types, frequency management, digest strategies, and preference centers.

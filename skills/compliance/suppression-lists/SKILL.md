@@ -1,3 +1,9 @@
+---
+name: suppression-lists
+description: Manage email suppression lists. Use when handling bounces, complaints, unsubscribes, DNC lists, GDPR erasure requests, or migrating suppressions between providers.
+license: MIT
+---
+
 # Suppression Lists
 
 Manage bounces, complaints, unsubscribes, and do-not-contact records to protect sender reputation and stay legally compliant.

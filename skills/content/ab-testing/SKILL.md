@@ -1,3 +1,9 @@
+---
+name: ab-testing
+description: Run email A/B tests with statistical rigor. Use when testing subject lines, content variants, send times, CTAs, or measuring experiment significance.
+license: MIT
+---
+
 # A/B Testing
 
 Test email variations systematically to improve open rates, click rates, and conversions with statistical confidence.
