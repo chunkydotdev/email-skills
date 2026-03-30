@@ -17,6 +17,7 @@ skills/
   compliance/                     # Legal and safety
   operations/                     # Monitoring and maintenance
   inbound/                        # Handling replies and incoming email
+  inbox/                          # Agent-native inbox providers
 ```
 
 Each skill lives in `skills/<category>/<skill-name>/SKILL.md`.

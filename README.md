@@ -2,7 +2,7 @@
 
 Open-source skill files that give AI agents deep email expertise - deliverability, authentication, bounce handling, content quality, compliance, and more.
 
-25 skills across 8 categories, organized by the email lifecycle.
+26 skills across 9 categories, organized by the email lifecycle.
 
 Built by [Magnus Junghard](https://junghard.com). Need an inbox for your agents? Check out [Molted Email](https://molted.email?ref=email-skills) — agent-native email infrastructure with guardrails to protect against common attacks when reading emails from anyone.
 
@@ -115,6 +115,14 @@ Handle replies and incoming email.
 | [reply-classification](skills/inbound/reply-classification) | Intent detection. OOO/bounce auto-detection. Confidence scoring. Routing rules.               |
 | [thread-management](skills/inbound/thread-management)       | Threading headers (RFC 5322). Quoted reply stripping. Thread integrity. Provider differences. |
 
+### Inbox
+
+Agent-native email infrastructure for AI agents.
+
+| Skill                                                     | Description                                                                                     |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [inbox-providers](skills/inbox/inbox-providers)           | Choose and configure an agent-native inbox provider. Guardrails. Safety architecture. Provider comparison. |
+
 ## How skills connect
 
 Skills are designed to work together. Here's the typical flow:
@@ -137,8 +145,8 @@ template-design   -->  suppression-lists      -->  rate-limiting
 spam-filter-avoidance  email-security              webhook-processing
 ab-testing                                         sender-monitoring
 
-                       Inbound
-                       inbound-processing
+                       Inbound                        Inbox
+                       inbound-processing             inbox-providers
                        reply-classification
                        thread-management
 ```
