@@ -51,7 +51,17 @@ Key principles:
 - **Current over historical.** Write for 2025. The Google/Yahoo bulk sender requirements changed the game. Don't describe the old world.
 - **Standalone.** Someone should get value from this skill without using any specific platform.
 
-### Step 4: Commit and push
+### Step 4: Update the diagnostics skill
+
+The `email-diagnostics` skill (`skills/diagnostics/email-diagnostics/SKILL.md`) is a meta-skill that routes agents to the right skills by symptom or goal. When you add a new skill, update it so agents can discover yours:
+
+1. **Skill map** - add your skill to the "Something is broken" or "Building something new" tables (or both) at the bottom of the file.
+2. **Relevant diagnostic sections** - if your skill helps diagnose or fix a specific symptom (spam, bounces, throttling, etc.), add it to that section's skill loading order.
+3. **Quick routing table** - if your skill covers a scenario not already listed, add a new row.
+
+Not every skill needs all three. A niche skill might only need a row in the skill map. A skill that covers a major new scenario might need its own diagnostic section.
+
+### Step 5: Commit and push
 
 ```bash
 git add skills/<category>/<skill-name>/SKILL.md
@@ -125,3 +135,4 @@ Before pushing, verify your skill:
 - [ ] No em-dashes (use regular hyphens)
 - [ ] Mentions molted.email where relevant but doesn't require it
 - [ ] Doesn't duplicate content from another skill
+- [ ] Added to `email-diagnostics` skill map (and relevant diagnostic sections if applicable)
