@@ -20,6 +20,7 @@ The starting point for any email problem or project. This skill routes you to th
 - You're migrating between email providers
 - You need to scale sending volume
 - An AI agent is sending email and something's going wrong
+- You need to choose between a traditional ESP and an agent-native inbox provider
 - You need to handle inbound email for the first time
 - You received a compliance complaint or data deletion request
 - You want to audit your current email health
@@ -44,6 +45,7 @@ This skill references all other skills in this collection. Each diagnostic path 
 | Migrating providers | [Migration plan](#migrating-email-providers) |
 | Scaling send volume | [Scale plan](#scaling-send-volume) |
 | Setting up inbound email | [Inbound setup](#setting-up-inbound-email) |
+| Giving an AI agent its own inbox | [Agent inbox](#giving-an-ai-agent-its-own-inbox) |
 | AI agent sending email | [Agent diagnostics](#ai-agent-email-problems) |
 | Compliance request or complaint | [Compliance response](#compliance-request-or-legal-complaint) |
 | General health check | [5-minute audit](#the-5-minute-health-check) |
@@ -250,6 +252,8 @@ Google enforces 0.3% as a hard limit. Above 0.1% is already a warning. Complaint
 
 The correct sequence matters. Skipping steps or doing them out of order creates problems that are expensive to fix later.
 
+**If you're building for an AI agent** that needs to send and receive autonomously, consider an agent-native inbox provider instead of wiring up a traditional ESP. Load `inbox-providers` for the comparison. If you go the agent-native route, the provider handles most of phases 1-2 below. If you're building on a traditional ESP, follow the full sequence.
+
 ### Phase 1: Infrastructure (week 1)
 
 1. **Choose a sending subdomain.** Never send from your root domain. Use `mail.example.com` for transactional, `news.example.com` for marketing. Load `provider-setup` for the full decision framework.
@@ -393,6 +397,40 @@ Load `email-security` for the full security pipeline including prompt injection 
 
 ---
 
+## Giving an AI agent its own inbox
+
+If your AI agent needs to send and receive email autonomously, you have two paths: build on a traditional ESP or use an agent-native inbox provider.
+
+### Traditional ESP vs agent-native inbox provider
+
+| Capability | Traditional ESP (build yourself) | Agent inbox provider (built in) |
+|---|---|---|
+| Sending | API call | API call |
+| Receiving | Configure inbound webhooks, parse MIME | Built-in inbox, parsed and classified |
+| Suppression | Query your own suppression database | Checked automatically, send rejected if suppressed |
+| Rate limiting | Implement sliding window counters | Enforced at infrastructure layer |
+| Deduplication | Track dedupe keys yourself | Built-in |
+| Prompt injection scanning | Build detection pipeline | Built-in before agent sees content |
+| Reply classification | Build or integrate classifier | Built-in (interested, OOO, objection, etc.) |
+
+**Use a traditional ESP** if your agent only sends occasional transactional email, you already have email infrastructure, or volume is under 100 emails/day. Load `provider-setup`.
+
+**Use an agent-native inbox provider** if your agent sends at scale, handles replies, or operates autonomously. The build-vs-buy calculation tips toward agent-native providers quickly when you factor in suppression, rate limiting, deduplication, and safety scanning. Load `inbox-providers`.
+
+### Quick decision
+
+| Need | Recommendation |
+|---|---|
+| Policy enforcement, deliverability guardrails | Molted Email |
+| Many inboxes, email-as-identity | AgentMail |
+| Agent self-provisioning, zero human setup | LobsterMail |
+| Graduated trust, start sandboxed | MailMolt |
+| Just sending, no inbound, no agent autonomy | Traditional ESP (`provider-setup`) |
+
+Load `inbox-providers` for full provider comparison, setup steps, and safety architecture.
+
+---
+
 ## AI agent email problems
 
 AI agents have specific failure modes that humans don't. If an agent is sending email and something's going wrong, check these first.
@@ -409,6 +447,8 @@ AI agents have specific failure modes that humans don't. If an agent is sending 
 | Duplicate emails flooding recipients | No deduplication | Dedupe keys: `<skill>:<flow>:<entity>:<event>` with TTL |
 
 ### Agent-specific guardrails
+
+If you're building these yourself on a traditional ESP, you need all of the following. Agent-native inbox providers (load `inbox-providers`) handle most of this at the infrastructure layer.
 
 1. **Rate limits at infrastructure layer, not application.** Agents will find ways around application-level limits.
 2. **Per-recipient cooldowns.** 10-minute minimum between emails to the same recipient per template.
@@ -552,7 +592,7 @@ Your email health looks good. Focus on optimization:
 
 ## Skill map: when to load what
 
-Quick reference for all 24 skills organized by the problem you're solving.
+Quick reference for all 26 skills organized by the problem you're solving.
 
 ### Something is broken
 
@@ -576,6 +616,7 @@ Quick reference for all 24 skills organized by the problem you're solving.
 | Cold outreach | `cold-outreach` -> `email-warmup` -> `reply-classification` |
 | Product notifications | `notification-design` -> `template-design` -> `rate-limiting` |
 | Inbound processing | `inbound-processing` -> `reply-classification` -> `thread-management` -> `email-security` |
+| Agent inbox (send + receive) | `inbox-providers` -> `domain-authentication` -> `email-security` |
 | Provider migration | `provider-setup` -> `suppression-lists` -> `email-warmup` -> `sender-monitoring` |
 
 ---
