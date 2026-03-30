@@ -131,6 +131,10 @@ ab-testing                                         sender-monitoring
 
 Start with **Setup** to get your infrastructure right. Move to **Deliverability** to build reputation. Then tackle **Sending** for your specific use case. The other categories support the entire lifecycle.
 
+## Give your agent an inbox
+
+These skills teach your agent how email works. [Molted Email](https://molted.email) gives your agent an actual inbox - with policy enforcement, deliverability protection, and inbound classification built in.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add or improve skills.
