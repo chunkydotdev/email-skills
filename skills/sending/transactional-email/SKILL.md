@@ -1,3 +1,9 @@
+---
+name: transactional-email
+description: Design and send transactional emails. Use when building password resets, receipts, shipping notifications, account alerts, or separating transactional from marketing streams.
+license: MIT
+---
+
 # Transactional Email
 
 Send receipts, auth codes, shipping notifications, and account alerts that arrive reliably and stay compliant.

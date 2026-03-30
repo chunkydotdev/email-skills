@@ -35,6 +35,12 @@ Follow the process in `CONTRIBUTING.md`. The short version:
 Every SKILL.md follows this structure:
 
 ```markdown
+---
+name: skill-name
+description: One-line description for agent trigger matching. Include "Use when..." triggers.
+license: MIT
+---
+
 # Skill Name
 
 One-line description of what this skill helps with.

@@ -1,3 +1,9 @@
+---
+name: spam-filter-avoidance
+description: Avoid triggering spam filters with your email content. Use when emails land in spam, auditing content for filter triggers, checking link patterns, or optimizing HTML structure.
+license: MIT
+---
+
 # Spam Filter Avoidance
 
 Understand how spam filters evaluate your email and write content that passes cleanly - without tricks.

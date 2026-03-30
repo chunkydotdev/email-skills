@@ -1,3 +1,9 @@
+---
+name: inbox-placement
+description: Understand what determines inbox vs spam placement. Use when emails land in spam, investigating Gmail Promotions tab, diagnosing deliverability issues, or optimizing engagement signals.
+license: MIT
+---
+
 # Inbox Placement
 
 Understand the factors that determine whether your email lands in the inbox, spam folder, or a secondary tab - and how to control them.

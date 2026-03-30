@@ -1,3 +1,9 @@
+---
+name: bounce-handling
+description: Process email bounces and protect sender reputation. Use when handling hard/soft bounces, building suppression lists, configuring retry strategies, or investigating high bounce rates.
+license: MIT
+---
+
 # Bounce Handling
 
 Process hard and soft bounces correctly so you protect sender reputation and stop wasting sends on dead addresses.

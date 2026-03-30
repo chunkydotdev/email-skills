@@ -1,3 +1,9 @@
+---
+name: email-warmup
+description: Ramp sending volume on new domains and IPs. Use when launching a new sending domain, switching providers, moving to a dedicated IP, or resuming sends after a pause.
+license: MIT
+---
+
 # Email Warmup
 
 Gradually ramp sending volume on new domains and IPs so mailbox providers trust you before you need to send at scale.

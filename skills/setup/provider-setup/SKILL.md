@@ -1,3 +1,9 @@
+---
+name: provider-setup
+description: Choose and configure an email service provider. Use when setting up email for a new project, comparing providers, migrating between providers, or adding failover.
+license: MIT
+---
+
 # Provider Setup
 
 Choose an email service provider and configure it properly so your emails get delivered reliably.

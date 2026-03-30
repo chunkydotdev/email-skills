@@ -1,3 +1,9 @@
+---
+name: sender-reputation
+description: Monitor and protect your email sender reputation. Use when deliverability drops, investigating spam placement, checking blocklists, or recovering from reputation damage.
+license: MIT
+---
+
 # Sender Reputation
 
 Understand how mailbox providers score your domain, monitor your reputation, and recover when it degrades.

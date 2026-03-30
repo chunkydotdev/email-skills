@@ -1,3 +1,9 @@
+---
+name: template-design
+description: Build HTML email templates that render everywhere. Use when designing email layouts, fixing Outlook rendering, implementing dark mode, adding accessibility, or choosing a templating framework.
+license: MIT
+---
+
 # Template Design
 
 Build HTML email templates that render correctly across every major email client.

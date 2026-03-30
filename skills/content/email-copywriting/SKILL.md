@@ -1,3 +1,9 @@
+---
+name: email-copywriting
+description: Write emails people actually read. Use when crafting subject lines, structuring email content, writing CTAs, optimizing preview text, or improving open and click rates.
+license: MIT
+---
+
 # Email Copywriting
 
 Write emails people actually read - subject lines that get opened, body copy that gets read, and CTAs that get clicked.

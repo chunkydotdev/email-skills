@@ -1,3 +1,9 @@
+---
+name: email-compliance
+description: Meet CAN-SPAM, GDPR, and CASL email requirements. Use when sending commercial email, implementing unsubscribe, managing consent, or classifying transactional vs commercial messages.
+license: MIT
+---
+
 # Email Compliance
 
 Navigate CAN-SPAM, GDPR, and CASL requirements so your emails are legally compliant across jurisdictions.

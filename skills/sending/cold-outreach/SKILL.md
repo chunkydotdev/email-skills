@@ -1,3 +1,9 @@
+---
+name: cold-outreach
+description: Send B2B cold email without getting blacklisted. Use when building outbound sequences, setting up cold email infrastructure, managing reply handling, or scaling prospecting.
+license: MIT
+---
+
 # Cold Outreach
 
 Send B2B cold email that gets replies without getting your domain blacklisted.
