@@ -1,3 +1,9 @@
+---
+name: domain-authentication
+description: Set up SPF, DKIM, and DMARC email authentication. Use when configuring a new sending domain, debugging spam/rejection issues, adding email providers, or preparing for Google/Yahoo/Microsoft bulk sender requirements.
+license: MIT
+---
+
 # Domain Authentication
 
 Set up SPF, DKIM, and DMARC so your emails actually reach the inbox.
