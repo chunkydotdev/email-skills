@@ -1,0 +1,263 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --color-bg: #ffffff;
+  --color-text: #0a0a0a;
+  --color-muted: #6b6b6b;
+  --color-border: #d4d4d4;
+  --color-accent: #0a0a0a;
+  --color-terminal-bg: #0a0a0a;
+  --color-terminal-text: #e4e4e7;
+  --color-terminal-accent: #e4e4e7;
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s;
+}
+
+a:hover {
+  opacity: 0.65;
+}
+
+/* ── Layout ── */
+
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 100vh;
+}
+
+/* ── Badge ── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: border-color 0.15s, opacity 0.15s;
+  margin-bottom: 3rem;
+}
+
+.badge:hover {
+  border-color: var(--color-text);
+  opacity: 1;
+}
+
+/* ── Heading ── */
+
+h1 {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-bottom: 1.75rem;
+}
+
+h1 span {
+  display: block;
+}
+
+h1 .accent {
+  color: var(--color-accent);
+}
+
+/* ── Subtitle ── */
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-muted);
+  line-height: 1.75;
+  max-width: 480px;
+  margin-bottom: 2.75rem;
+}
+
+/* ── Terminal ── */
+
+.terminal {
+  width: 100%;
+  max-width: 540px;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.terminal-title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--color-text);
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.copy-btn:hover {
+  color: var(--color-text);
+}
+
+.terminal-body {
+  background: var(--color-terminal-bg);
+  padding: 1.25rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-terminal-accent);
+}
+
+.terminal-body .prompt {
+  color: var(--color-terminal-text);
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+/* ── Install note ── */
+
+.install-note {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 3rem;
+}
+
+/* ── Buttons ── */
+
+.cta-row {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.75rem;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: 1.5px solid var(--color-text);
+}
+
+.btn-primary {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.btn-primary:hover {
+  background: var(--color-text);
+  color: var(--color-bg);
+  opacity: 1;
+}
+
+/* ── Footer ── */
+
+footer {
+  margin-top: auto;
+}
+
+footer p {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  margin-bottom: 0.35rem;
+}
+
+footer p:last-child {
+  margin-bottom: 0;
+}
+
+footer a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 480px) {
+  main {
+    padding: 3.5rem 1.25rem 3rem;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+  }
+
+  .terminal-body {
+    font-size: 0.78rem;
+  }
+}

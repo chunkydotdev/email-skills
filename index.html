@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>email-skills — Email skills for AI agents</title>
+  <meta name="description" content="Open-source email skills for AI agents. Domain authentication, deliverability, compliance, and more. Built for Claude Code, Codex, Cursor, and beyond.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --color-bg: #ffffff;
+  --color-text: #0a0a0a;
+  --color-muted: #6b6b6b;
+  --color-border: #d4d4d4;
+  --color-accent: #0a0a0a;
+  --color-terminal-bg: #0a0a0a;
+  --color-terminal-text: #e4e4e7;
+  --color-terminal-accent: #e4e4e7;
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s;
+}
+
+a:hover {
+  opacity: 0.65;
+}
+
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 100vh;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: border-color 0.15s, opacity 0.15s;
+  margin-bottom: 3rem;
+}
+
+.badge:hover {
+  border-color: var(--color-text);
+  opacity: 1;
+}
+
+h1 {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-bottom: 1.75rem;
+}
+
+h1 span {
+  display: block;
+}
+
+h1 .accent {
+  color: var(--color-accent);
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--color-muted);
+  line-height: 1.75;
+  max-width: 480px;
+  margin-bottom: 2.75rem;
+}
+
+.terminal {
+  width: 100%;
+  max-width: 540px;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.terminal-title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--color-text);
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.copy-btn:hover {
+  color: var(--color-text);
+}
+
+.terminal-body {
+  background: var(--color-terminal-bg);
+  padding: 1.25rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-terminal-accent);
+}
+
+.terminal-body .prompt {
+  color: var(--color-terminal-text);
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+.install-note {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 3rem;
+}
+
+.cta-row {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.75rem;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: 1.5px solid var(--color-text);
+}
+
+.btn-primary {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.btn-primary:hover {
+  background: var(--color-text);
+  color: var(--color-bg);
+  opacity: 1;
+}
+
+footer {
+  margin-top: auto;
+}
+
+footer p {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  margin-bottom: 0.35rem;
+}
+
+footer p:last-child {
+  margin-bottom: 0;
+}
+
+footer a {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 3.5rem 1.25rem 3rem;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+  }
+
+  .terminal-body {
+    font-size: 0.78rem;
+  }
+}
+  </style>
+</head>
+<body>
+
+  <main>
+
+    <a href="https://github.com/chunkydotdev/email-skills" class="badge" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,0 10.47,4.56 15.6,5.36 12,9.08 12.94,14.4 8,11.84 3.06,14.4 4,9.08 0.4,5.36 5.53,4.56"/></svg>
+      STAR ON GITHUB
+    </a>
+
+    <h1>
+      <span>Email Skills</span>
+      <span class="accent">for AI Agents</span>
+    </h1>
+
+    <p class="subtitle">
+      AI agent skills for email authentication, deliverability,
+      compliance, and infrastructure. Built for developers
+      who send email at scale.
+    </p>
+
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="terminal-title">TERMINAL</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('npx skills add chunkydotdev/email-skills')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          COPY
+        </button>
+      </div>
+      <div class="terminal-body">
+        <span class="prompt">$</span> npx skills add chunkydotdev/email-skills
+      </div>
+    </div>
+
+    <p class="install-note">INSTALLS EMAIL SKILLS FOR CLAUDE CODE, CODEX, CURSOR, AND MORE</p>
+
+    <div class="cta-row">
+      <a href="https://github.com/chunkydotdev/email-skills" class="btn btn-primary" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        VIEW ON GITHUB
+      </a>
+    </div>
+
+    <footer>
+      <p>Built by <a href="https://x.com/moonfarm_dev" target="_blank" rel="noopener">Magnus Junghard</a></p>
+      <p>Give your agents email at <a href="https://molted.email" target="_blank" rel="noopener">molted.email</a></p>
+    </footer>
+
+  </main>
+
+</body>
+</html>
