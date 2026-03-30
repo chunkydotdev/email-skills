@@ -106,6 +106,9 @@ One commit per skill. Descriptive message with what the skill covers.
 - [ ] `reply-classification` - categorizing replies (interested, OOO, bounce, etc.)
 - [ ] `thread-management` - maintaining conversation context
 
+### Inbox
+- [x] `inbox-providers` - choosing and configuring agent-native inbox providers
+
 ---
 
 ## Quality check
