@@ -6,6 +6,8 @@ Open-source skill.md files that give AI agents deep email expertise.
 
 ```
 skills/
+  diagnostics/                    # Start here - routes to the right skills
+    email-diagnostics/SKILL.md
   setup/                          # Getting email infrastructure right
     domain-authentication/SKILL.md
     provider-setup/SKILL.md

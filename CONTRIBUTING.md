@@ -65,6 +65,9 @@ One commit per skill. Descriptive message with what the skill covers.
 
 ## Skill backlog
 
+### Diagnostics
+- [x] `email-diagnostics` - meta-skill that routes to the right skills by symptom or goal
+
 ### Setup
 - [x] `domain-authentication` - SPF, DKIM, DMARC, bulk sender requirements
 - [x] `provider-setup` - choosing and configuring an email provider

@@ -118,6 +118,10 @@ Handle replies and incoming email.
 Skills are designed to work together. Here's the typical flow:
 
 ```
+Diagnostics
+email-diagnostics  (start here - routes you to the right skills)
+        |
+        v
 Setup                  Deliverability              Sending
 domain-authentication  sender-reputation           transactional-email
 provider-setup    -->  email-warmup           -->  cold-outreach
@@ -137,7 +141,7 @@ ab-testing                                         sender-monitoring
                        thread-management
 ```
 
-Start with **Setup** to get your infrastructure right. Move to **Deliverability** to build reputation. Then tackle **Sending** for your specific use case. The other categories support the entire lifecycle.
+Start with **Diagnostics** if you have a problem to solve or aren't sure where to begin. Otherwise, start with **Setup** to get your infrastructure right. Move to **Deliverability** to build reputation. Then tackle **Sending** for your specific use case. The other categories support the entire lifecycle.
 
 ## Who built this?
 
