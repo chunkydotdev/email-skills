@@ -2,7 +2,7 @@
 
 Open-source skill files that give AI agents deep email expertise - deliverability, authentication, bounce handling, content quality, compliance, and more.
 
-24 skills across 7 categories, organized by the email lifecycle.
+25 skills across 8 categories, organized by the email lifecycle.
 
 ## What are skills?
 
@@ -31,6 +31,14 @@ git submodule add https://github.com/chunkydotdev/email-skills.git skills/email
 ```
 
 ## Available skills
+
+### Diagnostics
+
+Not sure where to start? Start here.
+
+| Skill | Description |
+|-------|-------------|
+| [email-diagnostics](skills/diagnostics/email-diagnostics) | Diagnose email problems. Decision trees for spam, bounces, blocklists, throttling. Greenfield setup sequences. Skill routing for every scenario. |
 
 ### Setup
 
@@ -131,9 +139,13 @@ ab-testing                                         sender-monitoring
 
 Start with **Setup** to get your infrastructure right. Move to **Deliverability** to build reputation. Then tackle **Sending** for your specific use case. The other categories support the entire lifecycle.
 
-## Give your agent an inbox
+## Who built this?
 
-These skills teach your agent how email works. [Molted Email](https://molted.email) gives your agent an actual inbox - with policy enforcement, deliverability protection, and inbound classification built in.
+Email Skills is built by [Magnus Junghard](https://junghard.com).
+
+### Need an inbox for your agents?
+
+Magnus is building [Molted Email](https://molted.email?ref=email-skills) — agent-native email infrastructure with guardrails in place to protect against common attacks that your agents face when reading emails from anyone.
 
 ## Contributing
 
