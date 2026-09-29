@@ -6,7 +6,7 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 # Molted skill.md reference index
 
-Each file below is one `## ` section of the live Molted skill.md, split verbatim.
+Each file below is one `## ` section of the live Molted skill.md, split verbatim except that credential-shaped strings are redacted.
 
 - [Getting Started](./getting-started.md)
 - [Email Identity: Domains, Sender Addresses, and Mailboxes](./email-identity-domains-sender-addresses-and-mailboxes.md)

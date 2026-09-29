@@ -80,7 +80,12 @@ async function main() {
   const text = await res.text();
   const sha256 = createHash("sha256").update(text).digest("hex");
 
-  const sections = splitSections(text);
+  // Never republish anything shaped like a credential, even from docs examples:
+  // skill.md once carried a real-format webhook secret (whsec_ + 48 hex).
+  const redacted = text
+    .replace(/whsec_[0-9a-f]{8,}/g, "whsec_...")
+    .replace(/mm_(live|test)_[A-Za-z0-9_]{16,}/g, "mm_$1_...");
+  const sections = splitSections(redacted);
   if (sections.length === 0) {
     throw new Error("No '## ' sections found in fetched skill.md - refusing to overwrite reference/");
   }
@@ -105,7 +110,7 @@ async function main() {
   const indexContent =
     generatedHeader(SOURCE_URL) +
     "# Molted skill.md reference index\n\n" +
-    "Each file below is one `## ` section of the live Molted skill.md, split verbatim.\n\n" +
+    "Each file below is one `## ` section of the live Molted skill.md, split verbatim except that credential-shaped strings are redacted.\n\n" +
     indexBody +
     "\n";
   await writeFile(join(REFERENCE_DIR, "INDEX.md"), indexContent, "utf8");

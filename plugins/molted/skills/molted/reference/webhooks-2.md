@@ -49,8 +49,8 @@ Response (create only -- `secret` is shown once):
 {
   "id": "...",
   "url": "https://example.com/hooks/molted",
-  "secret": "whsec_2a47fe351a7206ecef3d1ff18979f209f0f4c72bef4fc79d",
-  "secretPrefix": "whsec_2a47fe35...",
+  "secret": "whsec_...",
+  "secretPrefix": "whsec_......",
   "events": ["inbound.received", "delivery.bounced"],
   "enabled": true
 }
