@@ -1,0 +1,12 @@
+{
+  "name": "molted",
+  "version": "0.1.0",
+  "description": "Wire Molted (agent-native email infrastructure) into an agent you're building: send/reply/read-inbox MCP tools, REST reference, and safe-default setup guidance.",
+  "homepage": "https://molted.email",
+  "repository": "https://github.com/chunkydotdev/email-skills",
+  "license": "MIT",
+  "author": {
+    "name": "Molted",
+    "url": "https://molted.email"
+  }
+}

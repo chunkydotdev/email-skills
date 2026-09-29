@@ -1,0 +1,33 @@
+name: Molted skill drift check
+
+on:
+  schedule:
+    # Daily at 07:00 UTC
+    - cron: "0 7 * * *"
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - "plugins/molted/**"
+      - "scripts/sync-molted-skill.mjs"
+      - ".github/workflows/molted-skill-drift.yml"
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Regenerate reference/ from the live Molted skill.md
+        run: node scripts/sync-molted-skill.mjs
+
+      - name: Fail if regeneration produced a diff
+        run: |
+          if ! git diff --exit-code plugins/molted/skills/molted/reference; then
+            echo ""
+            echo "::error::skill.md changed upstream: run node scripts/sync-molted-skill.mjs and commit the result."
+            exit 1
+          fi
