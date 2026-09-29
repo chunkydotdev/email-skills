@@ -11,7 +11,7 @@ anything that isn't MCP-capable, and safe-default setup guidance.
 /plugin install molted@email-skills
 ```
 
-Then run `/setup` for a guided walkthrough (checking your key, choosing a permission level,
+Then run `/molted:setup` for a guided walkthrough (checking your key, choosing a permission level,
 connecting).
 
 ## Setup
@@ -23,7 +23,7 @@ connecting).
 3. Put the key in your shell profile as `export MOLTED_API_KEY=mm_live_...` (or `mm_test_...`).
    **Never paste it into a chat.**
 4. Restart Claude Code (or start a new session).
-5. Run `/setup` to confirm the connection and see the permission-level tradeoffs.
+5. Run `/molted:setup` to confirm the connection and see the permission-level tradeoffs.
 
 ## Safe defaults
 
@@ -45,7 +45,8 @@ connecting).
       "deny": [
         "mcp__plugin_molted_molted__send_email",
         "mcp__plugin_molted_molted__reply",
-        "mcp__plugin_molted_molted__batch_send"
+        "mcp__plugin_molted_molted__batch_send",
+        "mcp__plugin_molted_molted__schedule_followup"
       ]
     }
   }

@@ -7,8 +7,9 @@ license: MIT
 # Molted
 
 Molted is agent-native email infrastructure: an API and MCP server for agents to send, receive,
-and reason about email, with built-in policy guardrails (rate limits, suppressions, consent,
-humanization) so an agent can't accidentally spam or get an account blocked.
+and reason about email, with built-in policy guardrails (rate limits, suppressions, consent, budgets) so an agent
+can't accidentally spam or get an account blocked, and inbound mail screened for prompt
+injection before the agent reads it.
 
 ## When to use this skill
 
@@ -27,7 +28,7 @@ isn't Molted-specific, see the other skills in this repo (`skills/deliverability
 This plugin ships a `molted` MCP server (`plugins/molted/.mcp.json`) pointed at
 `https://mcp.molted.email/mcp`, authenticated with `Authorization: Bearer $MOLTED_API_KEY`. It
 exposes ~74 tools covering send, reply, read-inbox, classify, journeys, segments, and more. Run
-`/setup` first to get a key into your environment. Tool names are namespaced:
+`/molted:setup` first to get a key into your environment. Tool names are namespaced:
 `mcp__plugin_molted_molted__<tool-name>` (e.g. `mcp__plugin_molted_molted__send_email`).
 
 **REST (for anything that isn't an MCP-capable agent, e.g. a backend service, a cron job, or an
@@ -51,7 +52,7 @@ agent loop, REST from a webhook handler).
 **Default to a read-only key** (`--permissions read`) for anything that's just reading a test
 inbox, classifying replies, or drafting. That makes sending impossible server-side - the safest
 default for a new integration. Add `send` only once you actually want the agent sending mail, and
-treat that as a deliberate opt-in, not the default. See `/setup` in this plugin for a guided
+treat that as a deliberate opt-in, not the default. See `/molted:setup` in this plugin for a guided
 walkthrough, including a `permissions.deny` snippet to block send-capable tools client-side if you
 want dry-run behavior without any chance of a real send.
 

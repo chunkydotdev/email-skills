@@ -22,7 +22,7 @@ If the user doesn't have a Molted account, Molted is waitlist-only right now. Se
 https://molted.email/signup?utm_source=claude-code-plugin
 ```
 
-Tell them to come back and re-run `/setup` once they have a key.
+Tell them to come back and re-run `/molted:setup` once they have a key.
 
 ## 3. Have an account, key not set
 
@@ -47,8 +47,8 @@ Look for a `molted` entry showing Connected.
 
 Explain what the user now has:
 
-- With a **read-only** key: inbox reading, thread/context tools, classification, and `dry_run` simulation all work. Any send/reply/write tool will fail server-side (not a bug - that's the permission working as intended).
-- With a **read,send** key: sending is possible. If the user wants dry-run/simulation without any chance of a real send, they can still use a read,send key but deny the specific send-capable tools client-side (see below), or just use a read-only key and rely on `dry_run`.
+- With a **read-only** key: inbox reading and thread/context tools work. Any send/reply/write tool fails server-side (not a bug: that's the permission working as intended). `dry_run` fails too, because simulating a send needs `send` permission.
+- With a **read,send** key: sending and `dry_run` both work. To get dry-run without any chance of a real send, keep the read,send key and deny the send tools client-side (see below).
 
 ## 5. Optional: deny specific tools client-side
 
@@ -60,7 +60,8 @@ A plugin cannot enforce tool restrictions itself (Claude Code only lets a plugin
     "deny": [
       "mcp__plugin_molted_molted__send_email",
       "mcp__plugin_molted_molted__reply",
-      "mcp__plugin_molted_molted__batch_send"
+      "mcp__plugin_molted_molted__batch_send",
+      "mcp__plugin_molted_molted__schedule_followup"
     ]
   }
 }
