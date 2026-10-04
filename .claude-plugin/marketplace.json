@@ -1,0 +1,15 @@
+{
+  "name": "email-skills",
+  "description": "Marketplace of Claude Code plugins from chunkydotdev/email-skills.",
+  "owner": {
+    "name": "Molted",
+    "url": "https://molted.email"
+  },
+  "plugins": [
+    {
+      "name": "molted",
+      "source": "./plugins/molted",
+      "description": "Wire Molted (agent-native email infrastructure) into an agent you're building: send/reply/read-inbox MCP tools, REST reference, and safe-default setup."
+    }
+  ]
+}

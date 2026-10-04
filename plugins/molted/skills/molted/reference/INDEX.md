@@ -1,0 +1,57 @@
+<!--
+GENERATED FILE. Do not hand-edit.
+Source: https://molted.email/skill.md
+Regenerate with: node scripts/sync-molted-skill.mjs
+-->
+
+# Molted skill.md reference index
+
+Each file below is one `## ` section of the live Molted skill.md, split verbatim except that credential-shaped strings are redacted.
+
+- [Getting Started](./getting-started.md)
+- [Email Identity: Domains, Sender Addresses, and Mailboxes](./email-identity-domains-sender-addresses-and-mailboxes.md)
+- [Authentication](./authentication.md)
+- [Agents may tighten, never loosen](./agents-may-tighten-never-loosen.md)
+- [Quick Reference](./quick-reference.md)
+- [Core Workflow: Send an Email](./core-workflow-send-an-email.md)
+- [Simulate Before Sending](./simulate-before-sending.md)
+- [Batch Send](./batch-send.md)
+- [Email Capture](./email-capture.md)
+- [Propose Email](./propose-email.md)
+- [Classify Inbound Intent](./classify-inbound-intent.md)
+- [Next Best Action](./next-best-action.md)
+- [Thread Context](./thread-context.md)
+- [Schedule Followup](./schedule-followup.md)
+- [Check Budget](./check-budget.md)
+- [Agent Analytics](./agent-analytics.md)
+- [Record Inbound Email](./record-inbound-email.md)
+- [Delivery Tracking](./delivery-tracking.md)
+- [Webhooks](./webhooks.md)
+- [Real-Time Events (SSE)](./real-time-events-sse.md)
+- [Multi-Agent Coordination](./multi-agent-coordination.md)
+- [Humanizer Config (Agent API)](./humanizer-config-agent-api.md)
+- [Safety Settings (Agent API)](./safety-settings-agent-api.md)
+- [Agent Adoption (Agent API)](./agent-adoption-agent-api.md)
+- [Domain Management (Agent API)](./domain-management-agent-api.md)
+- [Agentic Mailbox — *coming soon*](./agentic-mailbox-coming-soon.md)
+- [Contacts](./contacts.md)
+- [Mailbox Rules](./mailbox-rules.md)
+- [Template Management](./template-management.md)
+- [Email Humanizer](./email-humanizer.md)
+- [Journey Orchestration](./journey-orchestration.md)
+- [Audience Segmentation](./audience-segmentation.md)
+- [Email Lists](./email-lists.md)
+- [Experiments (A/B Testing)](./experiments-a-b-testing.md)
+- [Outcome Tracking & Attribution](./outcome-tracking-attribution.md)
+- [Suppression Management](./suppression-management.md)
+- [Safety Settings & Canary Tokens](./safety-settings-canary-tokens.md)
+- [Common Patterns](./common-patterns.md)
+- [Idempotency](./idempotency.md)
+- [Error Handling](./error-handling.md)
+- [Rate Limits](./rate-limits.md)
+- [Attachments](./attachments.md)
+- [Storage Limits](./storage-limits.md)
+- [Verified Team Addresses](./verified-team-addresses.md)
+- [Alert Destinations](./alert-destinations.md)
+- [Webhooks](./webhooks-2.md)
+- [Inbound Webhook Mappings](./inbound-webhook-mappings.md)
