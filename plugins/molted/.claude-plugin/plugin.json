@@ -1,6 +1,7 @@
 {
   "name": "molted",
-  "version": "0.1.0",
+  "displayName": "Molted",
+  "version": "0.2.0",
   "description": "Wire Molted (agent-native email infrastructure) into an agent you're building: send/reply/read-inbox MCP tools, REST reference, and safe-default setup guidance.",
   "homepage": "https://molted.email",
   "repository": "https://github.com/chunkydotdev/email-skills",
@@ -8,5 +9,20 @@
   "author": {
     "name": "Molted",
     "url": "https://molted.email"
+  },
+  "keywords": ["email", "inbox", "agents", "mcp", "molted"],
+  "icon": "./logo.png",
+  "documentationUrl": "https://molted.email/docs/mcp-server",
+  "supportUrl": "https://molted.email/support",
+  "privacyPolicyUrl": "https://molted.email/privacy",
+  "termsOfServiceUrl": "https://molted.email/terms",
+  "userConfig": {
+    "api_key": {
+      "type": "string",
+      "title": "Molted API key",
+      "description": "Your Molted API key (mm_live_... or mm_test_...), from Settings > Access at https://molted.email/app/settings#access. A read-only, mailbox-scoped key is the safe default. Stored in your system keychain, never in settings.json.",
+      "sensitive": true,
+      "required": true
+    }
   }
 }

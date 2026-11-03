@@ -4,19 +4,21 @@ description: Check Molted setup (API key, safe defaults) and show what's left to
 
 Walk the user through getting Molted working in this session. Do these steps in order.
 
-## 1. Check whether `MOLTED_API_KEY` is set (without printing it)
+The plugin stores the API key as a sensitive plugin option (`api_key`), in the system keychain. Claude Code puts it in the MCP server's `Authorization` header itself. You never see the key and don't need to: never ask for it, and never try to read it from the environment or any file.
+
+## 1. Check whether the `molted` server connects
 
 Run:
 
 ```bash
-test -n "$MOLTED_API_KEY" && echo set || echo missing
+claude mcp list
 ```
 
-Never echo, cat, or otherwise print the value of `MOLTED_API_KEY` at any point. If it's already set, skip to step 4.
+Find the `plugin:molted:molted` entry. If it shows Connected, skip to step 4. If it's missing, failed, or unauthorized, the key is probably not set yet: go on.
 
 ## 2. No account yet
 
-If the user doesn't have a Molted account, Molted is waitlist-only right now. Send them to:
+If the user doesn't have a Molted account, signup is self-serve. Send them to:
 
 ```
 https://molted.email/signup?utm_source=claude-code-plugin
@@ -28,27 +30,23 @@ Tell them to come back and re-run `/molted:setup` once they have a key.
 
 Tell the user, plainly:
 
-- Get an API key from the Molted dashboard (API Keys) or the CLI: `molted auth keys create --label claude-code --mailbox mbx_... --permissions read`
+- Create an API key in the portal under Settings > Access (`https://molted.email/app/settings#access`), or with the CLI: `molted auth keys create --label claude-code --mailbox mbx_... --permissions read`
 - **Recommend a read-only, mailbox-scoped key as the default** (`--permissions read`). That makes sending impossible server-side, which is the safest thing to hand an agent that's just reading a test inbox or drafting.
 - If they want the agent to be able to send, that's an explicit opt-in: create a key with `--permissions read,send` instead. Say this clearly as a choice, not a default.
-- Put the key in their shell profile (`~/.zshrc`, `~/.bashrc`, or wherever they set env vars) as `export MOLTED_API_KEY=mm_live_...` (or `mm_test_...` for a test key), then open a new shell or `source` the profile.
-- **Never paste the key into this chat.** If they start to paste one, stop them and point at the shell-profile approach instead - a key that lands in a chat transcript should be treated as compromised and rotated.
-- Restart Claude Code (or start a new session) after setting the variable, since the MCP server's env is read at session start.
+- Save the key by running `/plugin configure molted@email-skills` and pasting it into the masked **Molted API key** field. Claude Code stores it in the system keychain, not in `settings.json`, and Claude never sees it.
+- From a shell instead: `claude plugin configure molted@email-skills --values-stdin` reads a JSON object (`{"api_key": "..."}`) on stdin. The user runs this themselves, in their own terminal. Don't run it for them.
+- Older versions of this plugin read a `MOLTED_API_KEY` environment variable. That variable is no longer used; once the key is saved in the plugin, the user can remove the export from their shell profile.
+- **Never paste the key into this chat.** If they start to paste one, stop them and point at `/plugin configure` instead. A key that lands in a chat transcript should be treated as compromised and rotated.
+- After saving the key, run `/reload-plugins` (or start a new session) so the server reconnects with it.
 
-## 4. Key is set - confirm and explain the tool surface
+## 4. Connected - explain the tool surface
 
-Once `MOLTED_API_KEY` is set, the `molted` MCP server should connect automatically. Confirm with:
-
-```bash
-claude mcp list
-```
-
-Look for a `molted` entry showing Connected.
-
-Explain what the user now has:
+Once `plugin:molted:molted` shows Connected, explain what the user now has:
 
 - With a **read-only** key: inbox reading and thread/context tools work. Any send/reply/write tool fails server-side (not a bug: that's the permission working as intended). `dry_run` fails too, because simulating a send needs `send` permission.
 - With a **read,send** key: sending and `dry_run` both work. To get dry-run without any chance of a real send, keep the read,send key and deny the send tools client-side (see below).
+
+The server starts with the `core` toolset. More toolsets (`journeys`, `mailboxes`, `policy`, or `all`) are listed at https://molted.email/docs/mcp-server#toolsets.
 
 ## 5. Optional: deny specific tools client-side
 
@@ -61,6 +59,7 @@ A plugin cannot enforce tool restrictions itself (Claude Code only lets a plugin
       "mcp__plugin_molted_molted__send_email",
       "mcp__plugin_molted_molted__reply",
       "mcp__plugin_molted_molted__batch_send",
+      "mcp__plugin_molted_molted__send_to_list",
       "mcp__plugin_molted_molted__schedule_followup"
     ]
   }
@@ -71,4 +70,4 @@ Note the tool name format: `mcp__plugin_<plugin-name>_<server-name>__<tool-name>
 
 ## 6. Done
 
-Summarize: whether the key is set, which permission level it has (ask the user if unsure - there's no way to introspect it from here), and that they're ready to use the `molted` skill to wire email into their agent.
+Summarize: whether the server is connected, which permission level the key has (ask the user if unsure - there's no way to introspect it from here), and that they're ready to use the `molted` skill to wire email into their agent.
