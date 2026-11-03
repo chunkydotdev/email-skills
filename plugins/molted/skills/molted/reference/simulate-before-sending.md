@@ -6,7 +6,12 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 ## Simulate Before Sending
 
-Dry-run a send without persisting or sending anything:
+Dry-run a send without persisting or sending anything. The dry run runs the
+real send's own checks, in the same order: template and compliance, billing,
+quota, warmup, per-domain limits, policy, the sender, a thread or contact a
+human has taken over, another agent's lease, and the approval gates. It
+writes nothing (no send record, no quota or warmup counter, no unsubscribe
+token), and answers what the real send would answer:
 
 ```
 POST /v1/agent/simulate-send
@@ -14,7 +19,6 @@ POST /v1/agent/simulate-send
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "recipientEmail": "alice@example.com",
   "templateId": "onboarding-welcome",
   "dedupeKey": "test-dry-run",
@@ -25,19 +29,33 @@ POST /v1/agent/simulate-send
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `tenantId` | yes | Tenant identifier |
+| `tenantId` | no | Only on `api.molted.email`, where it is required; the base URL fills it in from your key |
 | `recipientEmail` | yes | Recipient email |
 | `templateId` | yes | Template slug or ID to check against |
 | `dedupeKey` | no | Deduplication key (checks duplicate policy) |
-| `mailboxId` | no | Mailbox to resolve sender from |
-| `payload` | no | Template variables (passed to policy engine for validation) |
+| `mailboxId` | no | Mailbox to send from (default: your key's mailbox, or the account's first) |
+| `payload` | no | Template variables; the dry run renders the template with them, as the send would |
+| `threadId` | no | The thread this send would reply in. A reply to the thread's own contact skips the cooldown when they wrote since your last message to them there; every reply is checked for thread risk and for a human take-over. It is checked from the thread's mailbox (another `mailboxId` is `400 thread_mailbox_mismatch`, as on the send). A mailbox-scoped key may only name a thread in its own mailboxes (403 otherwise) |
+
+What the answer means:
+
+| Field | Meaning |
+|-------|---------|
+| `wouldAllow: false` | The send would be blocked. `reason` is exactly what the real send would say (e.g. `hourly_limit_exceeded`, `domain_throttled`, `warmup_limit`, `mailbox_paused`, `thread_taken_over`, `lease_conflict`); `blockingReasons` lists every block found, in check order, so you can fix them all in one pass |
+| `wouldRequireApproval: true` | Nothing blocks, but the send would wait for a human first (the real send answers `pending_approval`). `approvalReason` is `autonomy_level`, `thread_risk_flagged` or `content_check` |
+| `wouldDefer: true` | The send would be scheduled for a later day to fit the domain warmup cap: `scheduledFor` (date) and `scheduledAt` (timestamp) |
+| `rendered` | The `subject`, `html` and `text` the send would deliver. An unsubscribe link in it is a placeholder that never resolves (a warning says so): the real send puts in the recipient's own link. With no `payload` at all (a policy-only check), a stored template whose variables can't be filled is not rendered: warning `content_not_rendered`, not a block. `simulate-batch` never renders content and returns policy results only |
 
 Response (includes full policy debug info):
 ```json
 {
   "wouldAllow": true,
   "simulation": true,
+  "wouldRequireApproval": false,
+  "wouldDefer": false,
+  "rendered": { "subject": "Welcome, Alice", "html": "<p>Hi Alice</p>", "text": null },
   "resolvedFromAddress": "support@yourco.com",
+  "resolvedMailboxId": "mbx_abc123",
   "rateLimited": false,
   "policyContext": {
     "hasDuplicate": false,
@@ -77,8 +95,9 @@ Or if blocked:
 }
 ```
 
-> Note: Rate limit checks in simulation use non-blocking peek. There is a
-> small TOCTOU window between simulation and actual send.
+> Note: the dry run only reads the counters the real send increments. There
+> is a small window between the dry run and the actual send in which other
+> sends (or changes) can change the answer.
 
 **Content check preview (`contentCheck`).** On accounts enrolled in the
 content-check preview, a simulation with content to judge (inline
@@ -113,7 +132,6 @@ POST /v1/agent/simulate-batch
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "templateId": "onboarding-welcome",
   "recipientEmails": ["alice@example.com", "bob@example.com"]
 }
@@ -125,11 +143,14 @@ Response:
   "total": 2,
   "wouldAllow": 1,
   "wouldBlock": 1,
+  "wouldDefer": 0,
   "results": [
     { "recipientEmail": "alice@example.com", "wouldAllow": true },
-    { "recipientEmail": "bob@example.com", "wouldAllow": false, "reason": "dnc" }
+    { "recipientEmail": "bob@example.com", "wouldAllow": false, "reason": "suppressed" }
   ]
 }
 ```
+
+Each result can also carry `cooldownExpiresAt`, `wouldRequireApproval` with `approvalReason`, and `wouldDefer` with `scheduledFor` (the warmup cap is projected across the whole batch; past the 30-day horizon a recipient is `wouldAllow: false`, `reason: "warmup_horizon_exceeded"`).
 
 ---

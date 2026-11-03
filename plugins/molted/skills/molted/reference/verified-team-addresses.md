@@ -12,10 +12,12 @@ A verified team address is either a workspace member's own verified email (alway
 
 `GET /v1/agent/budget` reports `teamAddressSends: { used }` for the month.
 
+**CLI:** `molted team-addresses list`, `molted team-addresses add <email>`, `molted team-addresses remove <id>`. An app connected through OAuth cannot add notification addresses (`403 oauth_forbidden`).
+
 ### List Team Addresses
 
 ```
-GET /v1/agent/notification-addresses?tenantId=your-tenant-id
+GET /v1/agent/notification-addresses
 Authorization: Bearer mm_live_...
 ```
 
@@ -40,7 +42,7 @@ POST /v1/agent/notification-addresses
 Authorization: Bearer mm_live_...
 Content-Type: application/json
 
-{ "tenantId": "your-tenant-id", "email": "oncall@acme.com" }
+{ "email": "oncall@acme.com" }
 ```
 
 Response (201): the address with `status: "pending"` and `confirmationSent: true`. Adding a pending address again sends a fresh link; adding a confirmed address or a member's own verified email changes nothing. Over the cap: `403 { "error": "team_address_cap_reached", "cap": 3 }`.
@@ -48,7 +50,7 @@ Response (201): the address with `status: "pending"` and `confirmationSent: true
 ### Remove a Notification Address
 
 ```
-DELETE /v1/agent/notification-addresses/:id?tenantId=your-tenant-id
+DELETE /v1/agent/notification-addresses/:id
 Authorization: Bearer mm_live_...
 ```
 

@@ -14,7 +14,6 @@ POST /v1/agent/batch/request-send
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "templateId": "product-update",
   "mailboxId": "mbx_abc123",
   "sends": [
@@ -32,6 +31,8 @@ POST /v1/agent/batch/request-send
 }
 ```
 
+Optional `replyTo` (one plain address) sets where replies go for every item; an item's own `replyTo` overrides it. See [Reply-To](#reply-to).
+
 Response:
 ```json
 {
@@ -39,12 +40,16 @@ Response:
   "total": 2,
   "queued": 1,
   "blocked": 1,
+  "scheduled": 0,
+  "errors": 0,
   "results": [
     { "recipientEmail": "alice@example.com", "requestId": "req_1", "status": "queued" },
     { "recipientEmail": "bob@example.com", "requestId": "req_2", "status": "blocked", "reason": "duplicate" }
   ]
 }
 ```
+
+Each result's `status` is `queued`, `scheduled` (with `scheduledAt`), `pending_approval` (held for a human, with `reason`), `blocked` (with `reason`) or `error` (an entry that couldn't be processed, e.g. `recipient_email_required`, `dedupe_key_required`, `duplicate_in_batch`). The top-level counts cover `queued`, `blocked`, `scheduled` and `errors`; a held item is in `results` only.
 
 Every batch route (`batch/request-send`, `batch/classify-intent`, `batch/next-best-action`, `simulate-batch`) takes at most 500 items. Above that the whole request is a `400` with `{ "error": "batch_too_large", "field", "max": 500, "received" }` and nothing is processed; split it into batches of 500 or fewer.
 

@@ -6,7 +6,9 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 ## Alert Destinations
 
-Configure where delivery alerts (bounces, complaints, anomalies) are sent. Supports webhook URLs and Slack incoming webhooks. All endpoints use Bearer token auth.
+Configure where delivery alerts (bounces, complaints, anomalies) are sent. Supports webhook URLs and Slack incoming webhooks. All endpoints use Bearer token auth and need a key that reaches every mailbox; create, delete and test also need the `manage` scope. An app connected through OAuth cannot create destinations (`403 oauth_forbidden`).
+
+**CLI:** `molted alerts destinations list`, `molted alerts destinations create --type webhook|slack --url <url>`, `molted alerts destinations delete|test|deliveries <id>`. The alert status itself (`GET /v1/agent/alerts/status`, see Alerts under Agentic Mailbox) is `molted overrides alerts`, and `molted doctor` checks it too.
 
 Alerts are evaluated on a schedule (about once a minute) for every tenant with at least one active destination -- you don't need to poll `GET /v1/agent/alerts/status` to trigger a notification, though doing so still notifies too if one hasn't gone out recently.
 
@@ -20,7 +22,6 @@ Authorization: Bearer mm_live_...
 Content-Type: application/json
 
 {
-  "tenantId": "your-tenant-id",
   "type": "webhook",
   "url": "https://example.com/alerts"
 }
@@ -43,7 +44,7 @@ Response:
 ### List Alert Destinations
 
 ```
-GET /v1/agent/alerts/destinations?tenantId=your-tenant-id
+GET /v1/agent/alerts/destinations
 Authorization: Bearer mm_live_...
 ```
 
@@ -52,7 +53,7 @@ Returns an array of all configured alert destinations for your tenant.
 ### Delete an Alert Destination
 
 ```
-DELETE /v1/agent/alerts/destinations/:id?tenantId=your-tenant-id
+DELETE /v1/agent/alerts/destinations/:id
 Authorization: Bearer mm_live_...
 ```
 
@@ -66,7 +67,7 @@ Returns 404 if the destination does not exist or does not belong to your tenant.
 ### Send a Test Alert
 
 ```
-POST /v1/agent/alerts/destinations/:id/test?tenantId=your-tenant-id
+POST /v1/agent/alerts/destinations/:id/test
 Authorization: Bearer mm_live_...
 ```
 
@@ -85,7 +86,7 @@ Response:
 ### List Delivery Attempts
 
 ```
-GET /v1/agent/alerts/destinations/:id/deliveries?tenantId=your-tenant-id
+GET /v1/agent/alerts/destinations/:id/deliveries
 Authorization: Bearer mm_live_...
 ```
 

@@ -6,12 +6,14 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 ## Agent Analytics
 
+For a mailbox-scoped key, send velocity, deliverability and policy decisions count only the mailboxes it can read, and suppression analytics need a key with access to all mailboxes. Contact fatigue always counts every mailbox, so a scoped agent sees the contact's full load.
+
 ### Contact Fatigue Score
 
 Check how fatigued a contact is before deciding to send:
 
 ```
-GET /v1/agent/analytics/contact-fatigue?tenantId=your-tenant-id&contactEmail=alice@example.com
+GET /v1/agent/analytics/contact-fatigue?contactEmail=alice@example.com
 ```
 
 Response:
@@ -39,7 +41,7 @@ Response:
 ### Send Velocity
 
 ```
-GET /v1/agent/analytics/send-velocity?tenantId=your-tenant-id
+GET /v1/agent/analytics/send-velocity
 ```
 
 Returns send volume counts across time windows and an hourly trend for the last 24 hours.
@@ -62,15 +64,15 @@ Returns send volume counts across time windows and an hourly trend for the last 
 ### Deliverability Stats
 
 ```
-GET /v1/agent/analytics/deliverability?tenantId=your-tenant-id&period=7d
+GET /v1/agent/analytics/deliverability?period=7d
 ```
 
-Periods: `24h`, `7d`, `30d`. Returns bounce rate, complaint rate, and delivery success rate.
+Periods: `24h`, `7d`, `30d`. Returns `totalSent`, `delivered`, `bounced`, `complained`, `deliveryRate`, `bounceRate`, `complaintRate`, and `hasData`. `hasData` is `false` when `totalSent` is 0 for the period -- the rates are 0 too, but that means nothing was sent, not a perfect score.
 
 ### Segment Membership Check
 
 ```
-GET /v1/agent/analytics/segment-check?tenantId=your-tenant-id&segmentId=seg_123&contactEmail=alice@example.com
+GET /v1/agent/analytics/segment-check?segmentId=seg_123&contactEmail=alice@example.com
 ```
 
 Returns whether the contact is a member of the segment.
@@ -78,15 +80,15 @@ Returns whether the contact is a member of the segment.
 ### Policy Decisions
 
 ```
-GET /v1/agent/analytics/policy-decisions?tenantId=your-tenant-id&period=7d
+GET /v1/agent/analytics/policy-decisions?period=7d
 ```
 
-Periods: `24h`, `7d`, `30d`. Returns a breakdown of policy decisions (blocked reasons with counts and percentages).
+Periods: `24h`, `7d`, `30d`. Returns `totalAllowed`, `totalBlocked`, `blockRate`, `hasData`, `blocksByReason`, and `dailyTrend`. `hasData` is `false` when there were no policy decisions in the period -- `blockRate` is 0 too, but that means no data, not "nothing was blocked".
 
 ### Suppression Analytics
 
 ```
-GET /v1/agent/analytics/suppressions?tenantId=your-tenant-id&period=7d
+GET /v1/agent/analytics/suppressions?period=7d
 ```
 
 Periods: `24h`, `7d`, `30d`. Returns suppression counts grouped by reason code.

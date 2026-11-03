@@ -14,7 +14,6 @@ POST /v1/agent/record-inbound
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "fromEmail": "alice@example.com",
   "toEmail": "support@yourco.com",
   "subject": "Re: Welcome to Acme",
@@ -43,7 +42,7 @@ If `mailboxId` is omitted, the system auto-resolves it by matching `toEmail` aga
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `tenantId` | yes | Your tenant identifier |
+| `tenantId` | no | Only on `api.molted.email`, where it is required; the base URL fills it in from your key |
 | `fromEmail` | yes | Sender's email address |
 | `toEmail` | yes | Recipient email (your domain) |
 | `subject` | no | Email subject line |
@@ -55,6 +54,6 @@ If `mailboxId` is omitted, the system auto-resolves it by matching `toEmail` aga
 | `mailboxId` | no | Mailbox that received this email. Auto-resolved from `toEmail` if not provided. |
 | `threadId` | no | Explicit thread ID to link to an existing thread |
 
-After recording, the email is automatically queued for intent classification and routing.
+After recording, the email is automatically queued for classification and routing. A recorded email has no headers, so its `autoReplyKind` is `null` and its `platformLabel` can only be `opt_out` or `null`.
 
 ---

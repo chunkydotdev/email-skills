@@ -35,19 +35,24 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 2. GET  /v1/agent/thread-context       → understand contact history
 3. POST /v1/agent/next-best-action     → get recommendation
 4. POST /v1/agent/request-send         → send if recommended
-5. DELETE /v1/agent/coordination/lease  → release when done
+5. DELETE /v1/agent/coordination/lease/:id → release when done
 ```
 
 ### Pattern 5: Inbound Triage
 
 ```
-1. POST /v1/agent/classify-intent      → classify the reply
+1. GET  /v1/agent/threads/:id          → read the reply and its platformLabel
+   (opt_out: if its routingAction is require_approval, Molted hasn't
+   suppressed the sender: check the suppression and add one; auto_reply
+   or delivery_notice: machine mail, usually nothing to answer)
 2. GET  /v1/agent/thread-context       → get full contact history
-3. POST /v1/agent/next-best-action     → decide what to do
+3. Decide what the reply is about yourself, then
+   POST /v1/agent/next-best-action     → check it's OK to act
 4. Branch on recommendation:
    - "reply"    → POST /v1/agent/outbound/reply
    - "wait"     → POST /v1/agent/schedule-followup
-   - "escalate" → POST /v1/agent/override/:threadId/escalate
+   - "escalate" → POST /v1/agent/threads/:id/handoff with a note and an ask
+     (or POST /v1/agent/override/:threadId/escalate: the same handoff, its reason as the note)
    - "stop"     → no action
 ```
 
@@ -84,18 +89,23 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 ### Pattern 9: Full Setup (New Agent)
 
 ```
-1.  POST /api/auth/sign-up/email        → create account
-2.  POST /v1/me/keys                    → generate API key
+1.  POST /api/auth/sign-up/email        → create account (CLI: molted auth signup)
+2.  POST /v1/me/keys                    → generate API key (the CLI does this for you)
 3.  GET  /v1/me/tenant                  → get tenant ID
-4.  POST /v1/templates                  → create first template
-5.  POST /v1/templates/:id/versions     → add template content
-6.  POST /v1/agent/simulate-send        → dry-run to confirm setup
-7.  POST /v1/agent/request-send         → send first email (uses default @agent.molted.email address)
+4.  GET  /v1/agent/setup                → can I send yet? (CLI: molted doctor)
+5.  activate a plan                     → sends are blocked (trial_not_activated) until
+                                          a plan is active: setup's next step says how
+6.  POST /v1/templates                  → create first template (or use _default)
+7.  POST /v1/templates/:id/versions     → add template content
+8.  POST /v1/agent/simulate-send        → dry-run to confirm setup
+9.  POST /v1/agent/request-send         → send first email (uses default @agent.molted.email address)
 --- optional: custom domain + mailbox ---
-8.  POST /v1/agent/domains              → add custom sending domain
-9.  GET  /v1/agent/domains/:id/domain-connect → check for one-click DNS setup
-10. POST /v1/agent/domains/:id/verify   → verify DNS records
-11. POST /v1/agent/mailboxes            → create mailbox for receiving
+10. POST /v1/agent/domains              → add custom sending domain
+11. GET  /v1/agent/domains/:id/domain-connect → check for one-click DNS setup
+12. POST /v1/agent/domains/:id/verify   → verify DNS records
+13. POST /v1/agent/mailboxes            → create mailbox for receiving
 ```
+
+Joining a workspace that already exists instead? Claim an invite (`POST /v1/adopt/claim`, `molted adopt claim <token>`), see [Agent Adoption](#agent-adoption-agent-api).
 
 ---

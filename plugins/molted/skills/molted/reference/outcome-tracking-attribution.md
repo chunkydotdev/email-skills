@@ -8,6 +8,8 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 Record business outcomes and attribute them to email touchpoints.
 
+**CLI:** `molted outcomes ingest --contact <email> --event-type <type> --event-name <name> [--revenue <n>]`, `molted outcomes list|get <id>|dashboard|journey-impact`. **MCP:** `record_outcome`, `outcome_dashboard`, `journey_impact`.
+
 ### Ingest an Outcome
 
 ```
@@ -16,7 +18,6 @@ POST /v1/outcomes/ingest
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "contactEmail": "alice@example.com",
   "eventType": "deal_closed",
   "eventName": "Enterprise Deal Won",
@@ -27,7 +28,7 @@ POST /v1/outcomes/ingest
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `tenantId` | yes | Your tenant identifier |
+| `tenantId` | no | Only on `api.molted.email`, where it is required; the base URL fills it in from your key |
 | `contactEmail` | yes | Contact email to attribute |
 | `eventType` | yes | One of: `activation`, `trial_conversion`, `meeting_booked`, `deal_closed`, `upsell`, `custom` |
 | `eventName` | yes | Human-readable event label |
@@ -38,7 +39,7 @@ POST /v1/outcomes/ingest
 ### List Outcomes
 
 ```
-GET /v1/outcomes?tenantId=your-tenant-id&eventType=deal_closed&startDate=2026-01-01&endDate=2026-02-28
+GET /v1/outcomes?eventType=deal_closed&startDate=2026-01-01&endDate=2026-02-28
 ```
 
 ### Outcomes Dashboard
@@ -46,7 +47,7 @@ GET /v1/outcomes?tenantId=your-tenant-id&eventType=deal_closed&startDate=2026-01
 Get a summary of outcomes over the last 30 days:
 
 ```
-GET /v1/outcomes/dashboard?tenantId=your-tenant-id
+GET /v1/outcomes/dashboard
 ```
 
 Response:
@@ -67,7 +68,7 @@ Response:
 See how journeys contribute to outcomes:
 
 ```
-GET /v1/outcomes/journey-impact?tenantId=your-tenant-id
+GET /v1/outcomes/journey-impact
 ```
 
 Response:
