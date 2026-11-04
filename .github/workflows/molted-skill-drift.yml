@@ -1,5 +1,14 @@
 name: Molted skill drift check
 
+# Regenerates plugins/molted/skills/molted/reference/ from the live Molted skill.md.
+# On drift, the scheduled (or manual) run force-updates the molted-skill-sync branch
+# and opens a pull request against the branch it ran on, or updates the open one.
+# No drift closes a leftover sync PR. Every run fails if a reference/*.md link in the
+# handwritten SKILL.md points at a file the sync no longer writes.
+#
+# Opening the PR needs "Allow GitHub Actions to create and approve pull requests"
+# (Settings > Actions > General > Workflow permissions).
+
 on:
   schedule:
     # Daily at 07:00 UTC
@@ -9,25 +18,91 @@ on:
     paths:
       - "plugins/molted/**"
       - "scripts/sync-molted-skill.mjs"
+      - "scripts/molted-skill-sync-report.mjs"
       - ".github/workflows/molted-skill-drift.yml"
 
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: molted-skill-drift-${{ github.ref }}
+
 jobs:
-  check-drift:
+  sync:
     runs-on: ubuntu-latest
+    env:
+      SYNC_BRANCH: molted-skill-sync
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Regenerate reference/ from the live Molted skill.md
         run: node scripts/sync-molted-skill.mjs
 
-      - name: Fail if regeneration produced a diff
+      - name: Describe the change and check SKILL.md links
+        id: report
+        run: node scripts/molted-skill-sync-report.mjs "$RUNNER_TEMP/sync-pr-body.md"
+
+      - name: Open or update the sync pull request
+        if: github.event_name != 'pull_request' && steps.report.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.ref_name }}
         run: |
-          if ! git diff --exit-code plugins/molted/skills/molted/reference; then
-            echo ""
-            echo "::error::skill.md changed upstream: run node scripts/sync-molted-skill.mjs and commit the result."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$SYNC_BRANCH"
+          git add plugins/molted/skills/molted/reference
+          git commit -q -m "chore(molted plugin): resync reference/ from live skill.md"
+
+          # Skip the push when the branch already holds this exact tree, so an
+          # unchanged upstream doesn't rewrite the PR every day.
+          if git fetch -q origin "$SYNC_BRANCH" 2>/dev/null && git diff --quiet FETCH_HEAD HEAD; then
+            echo "$SYNC_BRANCH already matches this sync."
+          else
+            git push --force origin "HEAD:refs/heads/$SYNC_BRANCH"
+          fi
+
+          pr=$(gh pr list --head "$SYNC_BRANCH" --base "$BASE" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --body-file "$RUNNER_TEMP/sync-pr-body.md"
+            echo "Updated sync PR #$pr: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/$pr"
+          elif ! gh pr create --base "$BASE" --head "$SYNC_BRANCH" \
+              --title "chore(molted plugin): resync reference/ from live skill.md" \
+              --body-file "$RUNNER_TEMP/sync-pr-body.md"; then
+            echo "::error::Pushed $SYNC_BRANCH but couldn't open the PR. If the error above says Actions may not create pull requests, enable Settings > Actions > General > 'Allow GitHub Actions to create and approve pull requests'. Open it by hand meanwhile: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/$BASE...$SYNC_BRANCH?expand=1"
+            cat "$RUNNER_TEMP/sync-pr-body.md" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+          cat "$RUNNER_TEMP/sync-pr-body.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Close a leftover sync pull request
+        if: github.event_name != 'pull_request' && steps.report.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.ref_name }}
+        run: |
+          pr=$(gh pr list --head "$SYNC_BRANCH" --base "$BASE" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr close "$pr" --delete-branch --comment "$BASE matches the live skill.md again, so this resync is no longer needed."
+          else
+            echo "No drift, no sync PR."
+          fi
+
+      - name: Note drift on pull requests
+        if: github.event_name == 'pull_request' && steps.report.outputs.changed == 'true'
+        run: |
+          echo "::warning::The live skill.md has drifted from reference/. The daily run opens a sync PR for it."
+          cat "$RUNNER_TEMP/sync-pr-body.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on broken SKILL.md links
+        if: ${{ !cancelled() && steps.report.outputs.broken != '' && steps.report.outputs.broken != '0' }}
+        env:
+          BROKEN: ${{ steps.report.outputs.broken }}
+        run: |
+          echo "::error::$BROKEN reference/ link(s) in plugins/molted/skills/molted/SKILL.md are broken after the sync. See the annotations above."
+          exit 1
