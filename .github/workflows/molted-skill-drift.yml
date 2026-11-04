@@ -70,11 +70,13 @@ jobs:
           pr=$(gh pr list --head "$SYNC_BRANCH" --base "$BASE" --state open --json number --jq '.[0].number // empty')
           if [ -n "$pr" ]; then
             gh pr edit "$pr" --body-file "$RUNNER_TEMP/sync-pr-body.md"
-            echo "Updated sync PR #$pr."
-          else
-            gh pr create --base "$BASE" --head "$SYNC_BRANCH" \
+            echo "Updated sync PR #$pr: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/$pr"
+          elif ! gh pr create --base "$BASE" --head "$SYNC_BRANCH" \
               --title "chore(molted plugin): resync reference/ from live skill.md" \
-              --body-file "$RUNNER_TEMP/sync-pr-body.md"
+              --body-file "$RUNNER_TEMP/sync-pr-body.md"; then
+            echo "::error::Pushed $SYNC_BRANCH but couldn't open the PR. If the error above says Actions may not create pull requests, enable Settings > Actions > General > 'Allow GitHub Actions to create and approve pull requests'. Open it by hand meanwhile: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/$BASE...$SYNC_BRANCH?expand=1"
+            cat "$RUNNER_TEMP/sync-pr-body.md" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
           cat "$RUNNER_TEMP/sync-pr-body.md" >> "$GITHUB_STEP_SUMMARY"
 
