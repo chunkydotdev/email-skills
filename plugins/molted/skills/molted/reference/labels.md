@@ -130,3 +130,4 @@ molted labels remove $URGENT $THREAD_ID
 MCP: `list_labels`, `label_thread`, `unlabel_thread`, and `read_inbox` with `label_ids` (core); `create_label`, `update_label`, `delete_label` (the `mailboxes` toolset). CLI: `molted labels`.
 
 **Folders are labels.** The older `/v1/agent/folders` routes still work as deprecated aliases (`Deprecation: true` and a `Link` to `/v1/agent/labels`), with the same rules as labels (a folder colour may still be a hex colour like `#3b82f6`; label reads show the nearest palette colour). A folder name from before these rules reads with control and invisible characters removed and cut to 50 characters.
+Stale line the sync should drop.
