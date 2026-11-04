@@ -26,14 +26,17 @@ isn't Molted-specific, see the other skills in this repo (`skills/deliverability
 
 **MCP (recommended for an agent you're building with Claude, or any MCP-capable runtime).**
 This plugin ships a `molted` MCP server (`plugins/molted/.mcp.json`) pointed at
-`https://mcp.molted.email/mcp`, authenticated with `Authorization: Bearer $MOLTED_API_KEY`. It
-exposes ~74 tools covering send, reply, read-inbox, classify, journeys, segments, and more. Run
-`/molted:setup` first to get a key into your environment. Tool names are namespaced:
+`https://mcp.molted.email/mcp`, authenticated with the API key saved in the plugin's `api_key`
+option (Claude Code sends it as the `Authorization: Bearer` header). By default it exposes the
+`core` toolset (send, reply, read-inbox, search, classify, contacts, lists, and more); journeys,
+segments and the rest are opt-in toolsets (https://molted.email/docs/mcp-server#toolsets). Run
+`/molted:setup` first to save a key. Tool names are namespaced:
 `mcp__plugin_molted_molted__<tool-name>` (e.g. `mcp__plugin_molted_molted__send_email`).
 
 **REST (for anything that isn't an MCP-capable agent, e.g. a backend service, a cron job, or an
-agent runtime that doesn't speak MCP).** Call `https://api.molted.email` directly with the same
-Bearer token. The full endpoint reference is split out in `reference/` - start with
+agent runtime that doesn't speak MCP).** Call `https://mailbox.molted.email` directly with a
+Bearer API key; it fills in your `tenantId` from the key. Your own service reads that key from its
+own config or secret store, not from this plugin. The full endpoint reference is split out in `reference/` - start with
 `reference/getting-started.md` and `reference/quick-reference.md`.
 
 Both paths hit the same policy engine and the same account, so you can mix them (e.g. MCP for the
@@ -41,13 +44,13 @@ agent loop, REST from a webhook handler).
 
 ## Auth in three steps
 
-1. **Get an account.** Signups are waitlist-only right now:
+1. **Get an account.** Signup is self-serve:
    `https://molted.email/signup?utm_source=claude-code-plugin`.
-2. **Get an API key.** Dashboard (API Keys) or CLI:
+2. **Get an API key.** Portal (Settings > Access) or CLI:
    `molted auth keys create --label claude-code --mailbox mbx_... --permissions read`.
    Keys are mailbox-scoped with a `permissions` list (`read`, `send`, or both).
-3. **Set `MOLTED_API_KEY`** in your shell profile (never paste it into a chat) and restart your
-   agent runtime so it picks up the env var.
+3. **Save it in the plugin** with `/plugin configure molted@email-skills` (masked input, stored in
+   the system keychain). Never paste it into a chat. Then run `/reload-plugins`.
 
 **Default to a read-only key** (`--permissions read`) for anything that's just reading a test
 inbox, classifying replies, or drafting. That makes sending impossible server-side - the safest
@@ -81,7 +84,7 @@ what would happen.
   `reference/real-time-events-sse.md`.
 
 Full request/response shapes: `reference/core-workflow-send-an-email.md`,
-`reference/simulate-before-sending.md`, `reference/classify-inbound-intent.md`,
+`reference/simulate-before-sending.md`, `reference/classify-inbound-email.md`,
 `reference/thread-context.md`.
 
 ## The policy and safety model (why this isn't just "call sendmail")
@@ -101,8 +104,9 @@ Three things worth knowing before you wire an agent in:
   ever tightens toward "more human," never loosens, and mailbox-level config is style-only (it
   can't turn the humanizer on/off, only the tenant/agent level can). See
   `reference/humanizer-config-agent-api.md` and `reference/email-humanizer.md`.
-- **Trial accounts have sends blocked** until billing is activated (`GET /v1/billing/status`).
-  Reads, drafts, and dry-runs still work on trial.
+- **New workspaces start on a trial plan with sends blocked** until a plan is activated
+  (`GET /v1/billing/status`; Free for verified humans, Solo or Team otherwise). See
+  `reference/getting-started.md`.
 
 ## Reference
 
@@ -119,8 +123,7 @@ agent shares a mailbox).
 
 ## Codex
 
-Codex's plugin format currently forbids env-var substitution in MCP headers (`Authorization:
-Bearer ${MOLTED_API_KEY}` isn't expressible), so this plugin doesn't support Codex yet. It's
-blocked on Codex adding MCP OAuth or an equivalent secret-injection mechanism. REST still works
-fine from a Codex-driven agent; you'd just wire the Bearer token in yourself rather than via a
-plugin manifest.
+Codex's plugin format forbids secrets and variable substitution in MCP headers (auth is the
+client's job, through OAuth), so this plugin doesn't support Codex until Molted's MCP server
+offers OAuth sign-in. Codex can still connect to the server from the user's own Codex config;
+https://molted.email/docs/mcp-server has the setup. REST works from a Codex-driven agent too.

@@ -6,7 +6,9 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 ## Domain Management (Agent API)
 
-Manage sending domains and set up DNS records via the agent API. All endpoints use Bearer token auth.
+Manage sending domains and set up DNS records via the agent API. All endpoints use Bearer token auth. Reads need only a valid key; add, verify, remove, skip warmup, rate limits and tracking need a key that reaches every mailbox with the `manage` scope (`403 mailbox_scope_denied` / `insufficient_scope` otherwise).
+
+**CLI:** `molted domains add <domain> [--open-tracking] [--click-tracking] [--tracking-subdomain <name>]`, `molted domains list|get <id>|verify <id>|dns-check <id>|remove <id>`, `molted domains warmup <id>`, `molted domains warmup skip <id>`, `molted domains rate-limits <id>`, `molted domains rate-limits set <id> [--max-per-minute <n> | --no-max-per-minute] [...hour, ...day]`, `molted domains tracking <id> [--open|--no-open] [--click|--no-click] [--subdomain <name>]`. **MCP:** `list_domains` (read-only).
 
 ### Add a Domain
 
@@ -16,35 +18,46 @@ POST /v1/agent/domains
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "domain": "notifications.example.com"
 }
 ```
 
-Response:
+Response (abridged):
 ```json
 {
-  "id": "dom_abc123",
+  "id": "domain-uuid",
   "domain": "notifications.example.com",
   "status": "pending",
   "dnsRecords": [
-    { "type": "TXT", "name": "notifications.example.com", "value": "v=spf1 include:..." },
-    { "type": "CNAME", "name": "resend._domainkey.notifications.example.com", "value": "..." },
-    { "type": "TXT", "name": "_dmarc.notifications.example.com", "value": "v=DMARC1; p=none; ..." }
-  ]
+    { "type": "MX", "name": "send.notifications.example.com", "value": "...", "priority": 10, "status": "not_started" },
+    { "type": "TXT", "name": "resend._domainkey.notifications.example.com", "value": "...", "status": "not_started" }
+  ],
+  "openTracking": false,
+  "clickTracking": false,
+  "trackingSubdomain": null,
+  "maxPerMinute": null,
+  "maxPerHour": null,
+  "maxPerDay": null,
+  "dmarc": {
+    "address": "...",
+    "rua": "mailto:...",
+    "record": { "type": "TXT", "name": "_dmarc.notifications.example.com", "value": "v=DMARC1; p=none; rua=mailto:..." }
+  }
 }
 ```
+
+`dnsRecords` are the records the email provider asks for (shown as returned). `dmarc.record` is the optional DMARC record that routes aggregate reports to Molted (`p=none`, changes nothing about delivery). Errors: `400` for the shared sending domain or a subdomain of it, `409` when the domain already exists in your workspace or is not available to your account.
 
 ### List Domains
 
 ```
-GET /v1/agent/domains?tenantId=your-tenant-id
+GET /v1/agent/domains
 ```
 
 ### Get Domain Details
 
 ```
-GET /v1/agent/domains/:domainId?tenantId=your-tenant-id
+GET /v1/agent/domains/:domainId
 ```
 
 When the parent `status` is terminal (`failed` or `verified`), per-record `dnsRecords[*].status` values stuck at `pending` / `not_started` are reconciled to match the parent status, and the response includes `"dnsRecordsStale": true` so callers know the per-record statuses were inferred from the cached snapshot rather than read live from the provider. To force a live re-check, call `POST /v1/agent/domains/:id/verify`.
@@ -56,7 +69,7 @@ Check if the user's DNS provider supports one-click setup via the [Domain Connec
 Supported providers include Cloudflare, Vercel, and other Domain Connect-compatible providers.
 
 ```
-GET /v1/agent/domains/:domainId/domain-connect?tenantId=your-tenant-id
+GET /v1/agent/domains/:domainId/domain-connect
 ```
 
 If supported:
@@ -75,6 +88,8 @@ If not supported:
 }
 ```
 
+Other `reason` values: `Domain is already verified`, `Domain Connect is not configured`, `Could not fetch provider settings`, `Could not map DNS records to template variables`.
+
 **Recommended flow:** If `supported` is `true`, send the `redirectUrl` to the user so they can approve DNS changes with a single click. After they approve, call the verify endpoint. If `supported` is `false`, share the DNS records from the domain details and guide the user through manual setup.
 
 ### Verify Domain
@@ -83,12 +98,9 @@ After the user has configured DNS records (via Domain Connect or manually), trig
 
 ```
 POST /v1/agent/domains/:domainId/verify
-```
+Content-Type: application/json
 
-```json
-{
-  "tenantId": "your-tenant-id"
-}
+{}
 ```
 
 Once the response shows `"status": "verified"`, the domain is ready to send from.
@@ -96,22 +108,24 @@ Once the response shows `"status": "verified"`, the domain is ready to send from
 ### Remove Domain
 
 ```
-DELETE /v1/agent/domains/:domainId?tenantId=your-tenant-id
+DELETE /v1/agent/domains/:domainId
 ```
+
+Response: `{ "deleted": true }`.
 
 ### Get Domain Warmup Status
 
 Check the warmup progress for a domain. New domains have daily send limits that gradually increase over ~28 days to build sender reputation.
 
 ```
-GET /v1/agent/domains/:domainId/warmup?tenantId=your-tenant-id
+GET /v1/agent/domains/:domainId/warmup
 Authorization: Bearer <api-key>
 ```
 
 Response:
 ```json
 {
-  "domainId": "dom_abc123",
+  "domainId": "domain-uuid",
   "domain": "notifications.example.com",
   "warmupActive": true,
   "skipped": false,
@@ -124,13 +138,14 @@ Response:
 
 Warmup schedule: day 0-6 → 100/day, day 7-13 → 500/day, day 14-27 → 2,000/day, day 28+ → 10,000/day. If `skipped` is `true`, warmup limits are bypassed.
 
+If the domain isn't verified yet (or is otherwise not usable as a sender), `warmupActive` is `false` and the response adds a `reason` field, e.g. `"reason": "domain_not_verified"` — there's no real warmup to report because no send can go out from the domain yet. Verify the domain first (`POST /v1/agent/domains/:domainId/verify`), then check warmup again.
+
 #### Deferring over-limit sends (`deferOnWarmup`)
 
 When a marketing send would exceed today's warmup cap, the API schedules it to the earliest future day that still has capacity instead of blocking, returning `status: 'scheduled'` with `reason: 'warmup_defer'` (`warmup_defer`). Transactional sends (template id starts with `_`, or `templates.type = 'transactional'`) are still hard-rejected with `warmup_limit` so they don't get silently delayed.
 
-- Pass `deferOnWarmup: true` on `POST /v1/agent/request-send` to force deferral for any over-limit send.
-- Pass `deferOnWarmup: false` to force hard-reject.
-- Omit the flag to use the default: marketing defers, transactional blocks. `POST /v1/agent/batch/request-send` defaults every item to deferral.
+- The rule is fixed by the template type today: marketing defers, transactional blocks, on `POST /v1/agent/request-send` and on every item of `POST /v1/agent/batch/request-send`.
+- `deferOnWarmup` (`true` to force deferral, `false` to force a hard reject) is accepted on `POST /v1/agent/request-send` but **not yet honoured** (#1300): any value is ignored and the default above applies.
 - If the caller also passes `scheduledAt`, the explicit schedule wins and the send is still hard-rejected on over-limit (we don't auto-shift explicit schedules).
 
 Deferred responses look like:
@@ -157,22 +172,20 @@ Use `/v1/agent/simulate-send` or `/v1/agent/simulate-batch` to preview the proje
 
 ### Skip Domain Warmup
 
-Skip the warmup schedule for an established domain. This immediately removes daily send limits imposed by the warmup system.
+Skip the warmup schedule for an established domain. This immediately removes daily send limits imposed by the warmup system, and can't be undone -- a loosening, gated per [Agents may tighten, never loosen](#agents-may-tighten-never-loosen) (`kind: "domain-warmup"`, `id`: the domain id).
 
 ```
 POST /v1/agent/domains/:domainId/warmup/skip
 Authorization: Bearer <api-key>
 Content-Type: application/json
 
-{
-  "tenantId": "your-tenant-id"
-}
+{}
 ```
 
 Response:
 ```json
 {
-  "domainId": "dom_abc123",
+  "domainId": "domain-uuid",
   "domain": "notifications.example.com",
   "warmupSkipped": true
 }
@@ -183,7 +196,7 @@ Response:
 View the current rate limit configuration and usage for a specific domain. All fields are `null` if no custom limits have been set (the global tenant limits apply instead).
 
 ```
-GET /v1/agent/domains/:domainId/rate-limits?tenantId=your-tenant-id
+GET /v1/agent/domains/:domainId/rate-limits
 Authorization: Bearer mm_live_...
 ```
 
@@ -203,7 +216,7 @@ The top-level `maxPerMinute|maxPerHour|maxPerDay` fields mirror the configuratio
 
 ### Update Domain Rate Limits
 
-Set per-domain sending rate limits. Pass `null` to remove a custom limit and fall back to the global tenant default. All fields are optional — only provided fields are updated.
+Set per-domain sending rate limits. Pass `null` to remove a custom limit and fall back to the global tenant default. All fields are optional — only provided fields are updated. Raising a limit, or clearing one to unlimited (`null`) where one was set, is a loosening, gated per [Agents may tighten, never loosen](#agents-may-tighten-never-loosen) (`kind: "domain-rate-limits"`, `id`: the domain id); lowering a limit, or setting one where none existed, always works. A single request touching several fields is a loosening if any one of them loosens.
 
 ```
 PATCH /v1/agent/domains/:domainId/rate-limits
@@ -211,7 +224,6 @@ Authorization: Bearer mm_live_...
 Content-Type: application/json
 
 {
-  "tenantId": "your-tenant-id",
   "maxPerMinute": 100,
   "maxPerHour": 1000,
   "maxPerDay": null
@@ -221,7 +233,7 @@ Content-Type: application/json
 Response:
 ```json
 {
-  "id": "dom_abc123",
+  "id": "domain-uuid",
   "domain": "notifications.example.com",
   "maxPerMinute": 100,
   "maxPerHour": 1000,
@@ -241,7 +253,6 @@ Authorization: Bearer mm_live_...
 Content-Type: application/json
 
 {
-  "tenantId": "your-tenant-id",
   "openTracking": true,
   "clickTracking": true,
   "trackingSubdomain": "links"
@@ -251,7 +262,7 @@ Content-Type: application/json
 Response:
 ```json
 {
-  "id": "dom_abc123",
+  "id": "domain-uuid",
   "domain": "notifications.example.com",
   "status": "pending",
   "openTracking": true,

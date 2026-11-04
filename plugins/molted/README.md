@@ -11,19 +11,24 @@ anything that isn't MCP-capable, and safe-default setup guidance.
 /plugin install molted@email-skills
 ```
 
-Then run `/molted:setup` for a guided walkthrough (checking your key, choosing a permission level,
-connecting).
+Installing from `/plugin` asks for your Molted API key in a masked field. Then run
+`/molted:setup` for a guided walkthrough (checking the connection, choosing a permission level).
 
 ## Setup
 
-1. Get a Molted account. Signups are waitlist-only right now:
+1. Get a Molted account. Signup is self-serve:
    `https://molted.email/signup?utm_source=claude-code-plugin`.
-2. Create an API key: Dashboard (API Keys), or CLI
+2. Create an API key: portal (Settings > Access), or CLI
    `molted auth keys create --label claude-code --mailbox mbx_... --permissions read`.
-3. Put the key in your shell profile as `export MOLTED_API_KEY=mm_live_...` (or `mm_test_...`).
-   **Never paste it into a chat.**
-4. Restart Claude Code (or start a new session).
+3. Save it in the plugin: the install dialog asks for it, or run
+   `/plugin configure molted@email-skills` at any time. The key is a sensitive option, so Claude
+   Code stores it in your system keychain (not `settings.json`) and sends it only as the
+   `Authorization: Bearer` header to `https://mcp.molted.email/mcp`. **Never paste it into a chat.**
+4. Run `/reload-plugins` (or start a new session).
 5. Run `/molted:setup` to confirm the connection and see the permission-level tradeoffs.
+
+Upgrading from 0.1.x: the plugin no longer reads a `MOLTED_API_KEY` environment variable. Save the
+key with `/plugin configure molted@email-skills`, then you can drop the export.
 
 ## Safe defaults
 
@@ -46,6 +51,7 @@ connecting).
         "mcp__plugin_molted_molted__send_email",
         "mcp__plugin_molted_molted__reply",
         "mcp__plugin_molted_molted__batch_send",
+        "mcp__plugin_molted_molted__send_to_list",
         "mcp__plugin_molted_molted__schedule_followup"
       ]
     }
@@ -56,9 +62,10 @@ connecting).
 
 ## What the tools do
 
-The `molted` MCP server (`https://mcp.molted.email/mcp`) exposes about 74 tools: sending and
-replying, reading and classifying inbound mail, thread context, journeys, segments, consent and
-suppression management, budget checks, and more. Full list and REST equivalents in the
+The `molted` MCP server (`https://mcp.molted.email/mcp`) starts with its `core` toolset: sending
+and replying, reading, searching and classifying inbound mail, thread context, contacts, lists,
+consent and suppression management, budget checks, and more. Journeys, segments and the rest are
+opt-in [toolsets](https://molted.email/docs/mcp-server#toolsets). Full list and REST equivalents in the
 [`molted` skill](skills/molted/SKILL.md) and its `reference/` (generated from the live
 [`molted.email/skill.md`](https://molted.email/skill.md)).
 
@@ -67,10 +74,10 @@ Tool names are namespaced as `mcp__plugin_molted_molted__<tool-name>` (e.g.
 
 ## Codex
 
-Not supported yet. Codex's plugin format forbids environment-variable substitution in MCP headers
-(`Authorization: Bearer ${MOLTED_API_KEY}` isn't expressible there), so this plugin is Claude Code
-only until Codex adds MCP OAuth or an equivalent way to inject a secret. REST still works fine
-from a Codex-driven agent, you'd just supply the Bearer token yourself.
+Not supported yet. Codex's plugin format forbids secrets and variable substitution in MCP headers
+(auth is the client's job, through OAuth), so this plugin is Claude Code only until Molted's MCP
+server offers OAuth sign-in. Codex can still connect to the server from your own Codex config; see
+[the MCP server docs](https://molted.email/docs/mcp-server).
 
 ## License
 

@@ -4,7 +4,7 @@
       "type": "http",
       "url": "https://mcp.molted.email/mcp",
       "headers": {
-        "Authorization": "Bearer ${MOLTED_API_KEY}"
+        "Authorization": "Bearer ${user_config.api_key}"
       }
     }
   }

@@ -6,7 +6,9 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 ## Audience Segmentation
 
-Build filtered audiences for targeting and analytics.
+Build filtered audiences for targeting and analytics. Create, update, archive and compute need a key that reaches every mailbox with the `manage` scope.
+
+**CLI:** `molted segments create --name <n> --filters '<filterGroup json>'`, `molted segments list|get|update|archive|compute <id>`, `molted segments members <id> [--limit] [--offset]`, `molted segments contact <contactId>`. **MCP:** `create_segment`, `get_segment`, `update_segment`, `archive_segment`, `compute_segment`, `segment_members`, `contact_segments`, `check_membership`.
 
 ### Create a Segment
 
@@ -16,7 +18,6 @@ POST /v1/segments
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "name": "Active Trial Users",
   "filterGroup": {
     "logic": "and",
@@ -54,7 +55,7 @@ The canonical shape is `{ logic: 'and' | 'or', filters: [...] }`. The evaluator 
 ### List / Get / Update Segments
 
 ```
-GET /v1/segments?tenantId=your-tenant-id
+GET /v1/segments
 GET /v1/segments/:id
 PATCH /v1/segments/:id   — update name or filters
 DELETE /v1/segments/:id  — archive
@@ -65,13 +66,13 @@ DELETE /v1/segments/:id  — archive
 Trigger an async membership computation:
 
 ```
-POST /v1/segments/:id/compute?tenantId=your-tenant-id
+POST /v1/segments/:id/compute
 ```
 
 ### List Members
 
 ```
-GET /v1/segments/:id/members?tenantId=your-tenant-id&limit=50&offset=0
+GET /v1/segments/:id/members?limit=50&offset=0
 ```
 
 ### Get Contact Segments

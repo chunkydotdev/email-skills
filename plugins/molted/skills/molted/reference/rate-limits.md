@@ -8,12 +8,15 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 Per-tenant quotas (configurable by plan):
 
-| Window | Default |
-|--------|---------|
-| Monthly | Plan-based (Trial: 100, Free: 3,000, Solo: 10,000, Team: 50,000) |
-| Daily | 10,000 |
-| Hourly | 1,000 |
-| Negative signal budget | 50 bounces+complaints per 24h |
+| Plan | Monthly | Daily | Hourly |
+|------|---------|-------|--------|
+| Trial (no plan yet; sends blocked until one is active) and a paid plan's 3-day trial | 100 in total | 50 | 20 |
+| Free | 3,000 | 100 (20/day in week 1, 50/day in week 2) | 40 |
+| Solo | 10,000 | 1,000 | 200 |
+| Team | 50,000 | 5,000 | 1,000 |
+| Enterprise | unlimited | unlimited | unlimited |
+
+Plus a negative-signal budget: 50 bounces + complaints per 24h (`negative_signal_budget_exceeded`).
 
 Check current usage with `GET /v1/agent/budget` before large batches.
 

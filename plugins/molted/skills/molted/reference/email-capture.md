@@ -14,7 +14,6 @@ POST /v1/agent/capture
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "email": "user@example.com",
   "list": "waitlist",
   "subject": "You're on the waitlist!",
@@ -74,13 +73,25 @@ POST /v1/agent/capture
 }
 ```
 
+**Address already unsubscribed from this list**: capture keeps it unsubscribed (does not reactivate it) and does not send the confirmation/notification email even if `subject` is set:
+```json
+{
+  "contactId": "uuid",
+  "listId": "uuid",
+  "subscriptionStatus": "unsubscribed",
+  "reason": "previously_unsubscribed",
+  "emailStatus": null,
+  "requestId": null
+}
+```
+
 ### Behavior
 
-1. **Upserts contact** by `(tenant_id, email)`. Merges name, tags, and metadata.
+1. **Resolves the contact** the same way list subscribe/unsubscribe do: matched case/whitespace-insensitively, with `+alias`/Gmail-dot variants collapsing to one contact (whichever was seen first). Merges name, tags, and metadata onto that contact. The email is stored lowercased and trimmed.
 2. **Resolves list** by slug. Auto-creates if not found (`type: newsletter`).
-3. **Subscribes** contact (idempotent - skips if already subscribed).
-4. **Sends email** via `_default` template if subject provided. Dedupe key: `capture:{list}:{email}`.
-5. Returns combined result.
+3. **Subscribes** contact (idempotent - skips if already subscribed; stays unsubscribed if it previously unsubscribed from this list -- see above).
+4. **Sends email** via `_default` template if subject provided, unless the address stayed unsubscribed. Dedupe key: `capture:{list}:{email}`.
+5. Returns combined result, including `reason` when the subscribe outcome needs explaining.
 
 ### CLI
 

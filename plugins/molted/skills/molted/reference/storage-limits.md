@@ -39,6 +39,6 @@ Response includes:
 }
 ```
 
-When the storage limit is reached, attachment uploads return a 403 error. Expired attachments are automatically cleaned up based on the retention window.
+When the storage limit is reached, attachment uploads return `403` ("Storage limit exceeded. Used: ... bytes, limit: ... bytes."). Expired attachments are automatically cleaned up based on the retention window.
 
 ---

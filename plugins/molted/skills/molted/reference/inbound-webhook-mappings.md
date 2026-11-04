@@ -6,12 +6,14 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 ## Inbound Webhook Mappings
 
-Inbound webhook mappings let you receive webhooks from external services (Clerk, Stripe, Supabase Auth, etc.) and automatically route the data into Molted features -- sync contacts, subscribe to lists, or trigger journeys. No code required.
+Inbound webhook mappings let you receive webhooks from external services (Clerk, Stripe, Supabase Auth, etc.) and automatically route the data into Molted features -- sync contacts, subscribe to lists, or trigger journeys. No code required. An app connected through OAuth cannot create or change mappings (`403 oauth_forbidden`).
+
+**CLI:** `molted inbound-hooks create|list|get|update|delete|logs|test`. No MCP tool.
 
 ### Create an Inbound Webhook Mapping
 
 ```
-POST /v1/agent/inbound-hooks?tenantId=T
+POST /v1/agent/inbound-hooks
 ```
 
 Body:
@@ -31,7 +33,7 @@ Body:
 }
 ```
 
-`requireConfirmation` on `subscribe_to_list` is optional (default `false`). This endpoint is a public, token-authenticated form URL, so two safeguards always apply regardless of the setting: an unsubscribed address is never reactivated by a resubmission (with confirmation on, it starts a fresh confirmation cycle instead), and a suppressed address is never activated. With confirmation on, a new or reactivating address goes to `pending` and emits a `list.subscribe.pending` journey event (same event the Lists API uses) instead of subscribing immediately -- configure a journey on that event to send the confirmation email. The public response never reveals which case occurred.
+`requireConfirmation` on `subscribe_to_list` is optional (default `false`). This endpoint is a public, token-authenticated form URL, so two safeguards always apply regardless of the setting: an unsubscribed address is never reactivated by a resubmission (with confirmation on, it starts a fresh confirmation cycle instead), in any spelling the Lists API treats as the same address and even after the contact was deleted and recreated or renamed, and a suppressed address is never activated. With confirmation on, a new or reactivating address goes to `pending` and emits a `list.subscribe.pending` journey event (same event the Lists API uses) instead of subscribing immediately -- configure a journey on that event to send the confirmation email. The public response never reveals which case occurred. A third safeguard: an archived list (see [Archive a list](#list--get--update--archive-lists)) refuses this action the same way it refuses `POST /v1/agent/lists/:id/subscribers` -- the action fails as if the list did not exist.
 
 Response includes a `urlToken` field. The webhook receiver URL is:
 ```
@@ -40,24 +42,26 @@ POST /v1/hooks/{urlToken}
 
 Paste this URL into your external provider's webhook settings.
 
+The token is a credential. `GET /v1/agent/inbound-hooks` and `GET /v1/agent/inbound-hooks/:id` return it only when the key's creator is an admin or the owner; for a member's or a viewer's key, `urlToken` is `null`. Keep the token from the create response.
+
 **Security model:** the receiver endpoint is authenticated by the URL token alone -- there is no provider-side signature verification in this MVP. Treat tokens as secrets and rotate them (delete + recreate) if a URL leaks. Per-token rate limit: 120 requests per 60 seconds; excess deliveries return `429`.
 
 ### List Inbound Webhook Mappings
 
 ```
-GET /v1/agent/inbound-hooks?tenantId=T
+GET /v1/agent/inbound-hooks
 ```
 
 ### Get Inbound Webhook Mapping
 
 ```
-GET /v1/agent/inbound-hooks/:id?tenantId=T
+GET /v1/agent/inbound-hooks/:id
 ```
 
 ### Update Inbound Webhook Mapping
 
 ```
-PATCH /v1/agent/inbound-hooks/:id?tenantId=T
+PATCH /v1/agent/inbound-hooks/:id
 ```
 
 Body (all fields optional):
@@ -74,13 +78,13 @@ Body (all fields optional):
 ### Delete Inbound Webhook Mapping
 
 ```
-DELETE /v1/agent/inbound-hooks/:id?tenantId=T
+DELETE /v1/agent/inbound-hooks/:id
 ```
 
 ### View Delivery Logs
 
 ```
-GET /v1/agent/inbound-hooks/:id/logs?tenantId=T&limit=50
+GET /v1/agent/inbound-hooks/:id/logs?limit=50
 ```
 
 Returns recent delivery logs with status (`processed`, `partial`, `failed`, `rejected`), per-action execution results, error messages, and (since #1643) the extracted `extractedEmail` / `extractedFields` and a `payloadHash` of the raw delivery. This log row itself never stores the raw payload -- only what was extracted (each field capped at 2000 bytes) plus the hash, so a delivery can be understood and, given the original payload again (a support ticket, the sender's own copy), verified byte-for-byte. Note this is narrower than "the raw payload is never stored anywhere": a `trigger_journey` action still passes the full raw payload into the journey event it creates, same as before this change, so journey `trigger_conditions` can match against it.
@@ -88,7 +92,7 @@ Returns recent delivery logs with status (`processed`, `partial`, `failed`, `rej
 ### Test an Inbound Webhook Mapping (Dry Run)
 
 ```
-POST /v1/agent/inbound-hooks/:id/test?tenantId=T
+POST /v1/agent/inbound-hooks/:id/test
 ```
 
 Body:
@@ -133,7 +137,7 @@ Use dot notation with array index support:
 
 | Action | Description | Parameter |
 |--------|------------|-----------|
-| `sync_contact` | Upsert contact with mapped fields | None |
+| `sync_contact` | Upsert contact with mapped fields: finds the contact by any spelling of the address (case, `+tag`, Gmail dots, display name) and updates it, or creates it in the canonical form | None |
 | `subscribe_to_list` | Add contact to a list | `listId` (required), `requireConfirmation` (optional, default `false`) |
 | `trigger_journey` | Fire an event to start a journey | `eventName` (required) |
 

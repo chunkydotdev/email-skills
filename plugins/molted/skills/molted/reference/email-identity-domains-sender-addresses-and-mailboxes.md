@@ -97,7 +97,7 @@ DELETE /v1/me/domains/:domainId         — remove domain
 
 To receive and manage threaded conversations, create a mailbox with a specific email address.
 
-Mailbox endpoints use the same base URL (`https://api.molted.email`):
+Mailbox endpoints use the same base URL (`https://mailbox.molted.email`):
 
 ```
 POST /v1/agent/mailboxes
@@ -117,9 +117,13 @@ Response:
   "address": "support@yourco.com",
   "displayName": "Support Inbox",
   "status": "active",
+  "isDefault": false,
+  "replyDeadlinesEnabled": false,
   "config": {}
 }
 ```
+
+`replyDeadlinesEnabled` says whether inbound mail to the mailbox gets a reply deadline, and an email still unanswered when it passes is escalated to the person (Needs you, "Reply deadline missed", a `thread.sla_breached` event). It is on for mailboxes that existed before the switch and off for new ones. You can read it but never change it: only a person does, from the mailbox's page in the portal, and a `PATCH` that includes it returns `403 reply_deadlines_human_only`. With it off, nothing else changes: routing, approvals and quarantine are the same.
 
 Mailboxes on verified or shared domains are **auto-activated** on creation (`status: "active"`). Mailboxes on unverified domains start as `"provisioning"` — verify the domain first, then activate the mailbox via `PATCH /v1/agent/mailboxes/:id` with `{ "status": "active" }`. Both creating and activating on a custom domain require *your own* tenant to hold the verified `tenant_domains` row for it — a domain another tenant has already verified is rejected on create (`409 Conflict`), and a mailbox stuck in `provisioning` on an unverified domain can't be force-activated either, until it's verified.
 
@@ -134,17 +138,22 @@ Extra rules apply on the shared domain (`agent.molted.email` by default), since 
 - Addresses must be ASCII, lowercase alphanumeric with dots/hyphens only (`400 Bad Request`) — no plus-addressing (`support+x@...`) and no non-ASCII local part or domain.
 - Addresses are unique **across all tenants**, not just your own, and against every tenant's sender addresses too — creating or cloning another tenant's shared-domain address, whether it's a mailbox or a sender address, returns `409 Conflict`.
 - Catch-all cannot be enabled on a shared-domain mailbox (`400 Bad Request`) — only a verified, receiving-enabled custom domain can be a catch-all.
-- Display names are screened for impersonation (role, brand and security words like `support`, `billing`, `admin`, `official`, `verification`, `bank`, `team`, `noreply`, plus a short brand list, matched case- and homoglyph-insensitively). On create or clone, a rejected display name is silently replaced with the address's own local part and the response includes a `displayNameWarning` field explaining why. On update (`PATCH`), a rejected display name is refused outright with `400 Bad Request`. None of this applies on a verified custom domain — any display name is allowed there.
+- Display names are screened for impersonation (role, brand and security words like `support`, `billing`, `admin`, `official`, `verification`, `bank`, `team`, `noreply`, plus a short brand list, matched case- and homoglyph-insensitively), and, separately, for a shape that reads as an email address or a domain (`support@paypal.com`, `ceo@bank.com`, `paypal.com`) — a display name containing `@` or a `label.tld` run is rejected regardless of whether it also contains a banned word. On create or clone, a rejected display name is silently replaced with the address's own local part and the response includes a `displayNameWarning` field explaining why. On update (`PATCH`), a rejected display name is refused outright with `400 Bad Request`. None of this applies on a verified custom domain — any display name is allowed there.
 - The same screening runs again on every send from a shared-domain mailbox, not just when the name is set: a name saved before the screening existed still can't reach a recipient's inbox as-is. A name that now fails goes out bare (address only, no display name) for that send; the mailbox's stored `displayName` is untouched. A custom domain's display name is always sent as-is.
 
 ```
 GET /v1/agent/mailboxes                       — list mailboxes
 GET /v1/agent/mailboxes/:id                   — get a single mailbox
-PATCH /v1/agent/mailboxes/:id                 — update address, display name, status, or config
+PATCH /v1/agent/mailboxes/:id                 - update display name, status, or config; { "isDefault": true } makes it the default; a change to address or catchAll is a human decision
 POST /v1/agent/mailboxes/:id/clone            — clone a mailbox with its settings (requires admin scope)
-DELETE /v1/agent/mailboxes/:id                — soft-delete a mailbox (requires admin scope)
+DELETE /v1/agent/mailboxes/:id                - delete a mailbox: archived for 14 days, then gone (requires admin scope)
+POST /v1/agent/mailboxes/:id/restore          - undo a delete inside the 14 days (requires admin scope)
 GET /v1/agent/mailboxes/:id/stats?period=7d   — per-mailbox usage stats (sends, deliverability, inbound)
 ```
+
+**Deleting a mailbox is recoverable for 14 days.** `DELETE` (admin scope, `manage` on the mailbox) archives it: it stops sending and disappears from every agent route at once (lists, threads, inbox, `get_context`), and its threads are hidden, not trashed. Its address stays reserved, so nobody can create it again meanwhile. Mail that arrives for it is stored and held, with no `inbound.received`/`inbound.classified` events; only mail to its own address, so a catch-all mailbox stops catching at once, and deleting one is a human decision (`kind: "mailbox-address"`, see [Agents may tighten, never loosen](#agents-may-tighten-never-loosen)). The response says so: `{ "deleted": true, "archived": true, "mailboxId", "address", "archivedAt", "purgeAfter", "restorableBy", "message" }`. Its pending follow-ups wait (they resume if it's restored). The person running the workspace sees a card saying your agent deleted it, and can restore it from the portal until `purgeAfter`; after that it is deleted for good (threads, messages, held mail, attachments, the content of its sends, and its pending follow-ups). `POST /v1/agent/mailboxes/:id/restore` (same scopes) undoes a delete an agent made: the mailbox, its threads and the held mail come back as they were, with an `inbound.released` event (`reason: "mailbox_restored"`) per held message. A mailbox a person deleted can only be restored by a person (`restorableBy: "person"`): an agent gets `403 human_archive`. After `purgeAfter` it answers `410 archive_expired`; at the plan's mailbox limit, `403 mailbox_limit`. Creating an archived address again is `409 mailbox_archived` (with its `mailboxId`). You still can't delete the last mailbox. On a custom domain, restore re-checks ownership: if it's no longer verified for your account the mailbox comes back as `provisioning` (`domainNeedsVerification: true` in the response, with a message); if a different account has since verified it, the restore is refused outright with `409 domain_conflict`. On the shared domain, restore also refuses with `409 address_taken` if a different account now holds the exact address (as a mailbox or a sender address). A mailbox soft-deleted before this 14-day window existed got one too (`archived_by_kind: "system"`): it raises its own needs-you card instead of none, and restoring it behaves the same as any other archived mailbox, including these same restore checks.
+
+**The default mailbox.** A send without a `mailboxId` (and a journey step or follow-up with no mailbox) goes out from the workspace's default mailbox: the one chosen with `PATCH /v1/agent/mailboxes/:id` `{ "isDefault": true }` (CLI `molted mailboxes set-default <id>`, MCP `set_default_mailbox`, or a person in the portal), else the oldest active mailbox. The signup mailbox starts as the default. Every mailbox response carries `isDefault`, `true` on exactly the mailbox such a send uses right now. Only an `active` mailbox can be chosen (`409 mailbox_not_active`); `"isDefault": false` is `400` (choose another mailbox instead); a key scoped to some mailboxes gets `403 mailbox_scope_denied` (it needs access to every mailbox, since the default redirects every unattributed send). While the chosen default is paused or deleted, sends fall back to the oldest active mailbox (and `isDefault` follows); a paused default takes over again once resumed, a deleted one does not, even after a restore. A key scoped to some mailboxes sends without a `mailboxId` from its own first active mailbox, not the workspace default.
 
 Mailbox limits by plan:
 

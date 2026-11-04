@@ -15,7 +15,6 @@ POST /v1/agent/schedule-followup
 **Relative delay:**
 ```json
 {
-  "tenantId": "your-tenant-id",
   "contactEmail": "alice@example.com",
   "threadRequestId": "req_abc123",
   "delayMinutes": 1440,
@@ -26,7 +25,6 @@ POST /v1/agent/schedule-followup
 **Absolute time:**
 ```json
 {
-  "tenantId": "your-tenant-id",
   "contactEmail": "alice@example.com",
   "threadRequestId": "req_abc123",
   "scheduledAt": "2026-03-27T09:00:00Z",
@@ -37,7 +35,6 @@ POST /v1/agent/schedule-followup
 **Choosing the content** (optional; defaults to a `followup-default` template if your tenant has created one):
 ```json
 {
-  "tenantId": "your-tenant-id",
   "contactEmail": "alice@example.com",
   "threadRequestId": "req_abc123",
   "delayMinutes": 1440,
@@ -59,7 +56,7 @@ Response:
 
 `delayMinutes` range: 1–43200 (1 minute to 30 days).
 
-**Content** comes from `triggerConditions` at execute time, not from anything on this call directly: `triggerConditions.templateId` names a template slug (or template ID) to render, defaulting to `followup-default` if you don't set one -- create a template with that slug in your tenant to give every follow-up that names no template its content. `triggerConditions.payload` supplies the template's variables. Set `templateId` to `_default` to skip template lookup entirely and pass literal `subject`/`html`/`text` in `payload` instead. No template resolves (no `templateId` given and no `followup-default` template exists, or an explicit `templateId` that doesn't exist) or the template fails to render: the follow-up is cancelled (reason `template_not_found` or `render_failed`) rather than sent with no content.
+**Content** comes from `triggerConditions` at execute time, not from anything on this call directly: `triggerConditions.templateId` names a template slug (or template ID) to render, defaulting to `followup-default` if you don't set one -- create a template with that slug in your tenant to give every follow-up that names no template its content. `triggerConditions.payload` supplies the template's variables. Set `templateId` to `_default` to skip template lookup entirely and pass literal `subject`/`html`/`text` in `payload` instead. No template resolves (no `templateId` given and no `followup-default` template exists, or an explicit `templateId` that doesn't exist) or the template fails to render: the follow-up is cancelled (reason `template_not_found` or `render_failed`) rather than sent with no content. The rendered content gets the same outbound compliance as any send (see [System Variables](#system-variables)): `{{unsubscribe_url}}` / `{{molted:unsubscribe_url}}` become a working per-recipient link with one-click headers, `{{physical_address}}` is filled with the workspace's address, and a marketing template gets the address footer. A marketing template (the type of `followup-default` unless you created it as `transactional`) while the workspace has no physical address on file cancels the follow-up with reason `missing_physical_address`.
 
 At execute time the follow-up also checks suppression and the tenant's billing plan before it sends. A suppressed contact, or a `trial` (not yet activated) or `expired` tenant, cancels the follow-up outright (reason `suppressed`, `trial_not_activated`, or `subscription_expired`, recorded in the audit trail) rather than deferring it, since the follow-up isn't something worth waiting out.
 
@@ -78,7 +75,7 @@ DELETE /v1/agent/followups/fu_xyz
 Cancel a send that is currently in the `scheduled` delivery state (either explicitly scheduled via `scheduledAt`, or auto-deferred by the warmup ramp with `reason: 'warmup_defer'`). Immediate (`queued`) or already-sent requests cannot be cancelled.
 
 ```
-DELETE /v1/agent/sends/:requestId?tenantId=your-tenant-id
+DELETE /v1/agent/sends/:requestId
 Authorization: Bearer <api-key>
 ```
 

@@ -11,7 +11,7 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 Get the full send lifecycle for a request — policy decision, delivery events, and audit trail:
 
 ```
-GET /v1/ops/trace/req_abc123?tenantId=your-tenant-id
+GET /v1/ops/trace/req_abc123
 ```
 
 Response:
@@ -40,7 +40,7 @@ Response:
 ### Delivery Event Timeline
 
 ```
-GET /v1/dashboard/request/req_abc123/timeline?tenantId=your-tenant-id
+GET /v1/dashboard/request/req_abc123/timeline
 ```
 
 Returns delivery events in chronological order for a single request.
@@ -48,7 +48,7 @@ Returns delivery events in chronological order for a single request.
 ### Message Lifecycle Events
 
 ```
-GET /v1/agent/messages/req_abc123/events?tenantId=your-tenant-id
+GET /v1/agent/messages/req_abc123/events
 ```
 
 Returns all lifecycle events for a message (send request) in chronological order. Events include sent, delivered, opened, clicked, bounced, complained, and failed.

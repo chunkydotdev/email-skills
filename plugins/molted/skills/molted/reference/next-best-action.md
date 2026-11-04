@@ -14,7 +14,6 @@ POST /v1/agent/next-best-action
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "contactEmail": "alice@example.com"
 }
 ```
@@ -45,7 +44,6 @@ POST /v1/agent/batch/next-best-action
 
 ```json
 {
-  "tenantId": "your-tenant-id",
   "contactEmails": ["alice@example.com", "bob@example.com"]
 }
 ```
@@ -54,10 +52,11 @@ POST /v1/agent/batch/next-best-action
 
 | Value | Meaning |
 |-------|---------|
-| `reply` | Contact sent something — respond to it |
-| `wait` | Too soon to reach out again, let them breathe |
-| `nudge` | Time for a gentle followup |
-| `stop` | Contact is suppressed, disengaged, or at risk — do not send |
-| `escalate` | Situation needs human judgment |
+| `wait` | Too soon to reach out again (a send, or one awaiting approval, in the last 24 hours with no reply), or no strong signal either way |
+| `nudge` | No activity for more than 7 days, or none at all yet: time for a gentle followup or a first outreach |
+| `stop` | The contact is suppressed, or recently asked to stop receiving mail (`opt_out`): do not send |
+| `escalate` | A recent inbound message from the contact got a non-clean safety verdict: a human should look first |
+
+`reply` is still part of the response type but is no longer returned: what an inbound message asks for is for your agent to read and decide.
 
 ---
