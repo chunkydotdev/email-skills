@@ -84,7 +84,7 @@ what would happen.
   `reference/real-time-events-sse.md`.
 
 Full request/response shapes: `reference/core-workflow-send-an-email.md`,
-`reference/simulate-before-sending.md`, `reference/classify-inbound-email.md`,
+`reference/simulate-before-sending.md`, `reference/classify-inbound-intent.md`,
 `reference/thread-context.md`.
 
 ## The policy and safety model (why this isn't just "call sendmail")
