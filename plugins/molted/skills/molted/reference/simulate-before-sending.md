@@ -151,6 +151,6 @@ Response:
 }
 ```
 
-Each result can also carry `cooldownExpiresAt`, `wouldRequireApproval` with `approvalReason`, and `wouldDefer` with `scheduledFor` (the warmup cap is projected across the whole batch; past the 30-day horizon a recipient is `wouldAllow: false`, `reason: "warmup_horizon_exceeded"`).
+Add `mailboxId` to dry-run from the mailbox the batch will send from (the cooldown is judged per mailbox; a key limited to some mailboxes gets its first mailbox when it names none). Each result is checked like the real batch send, including the contact lease: a recipient under another agent's lease is `wouldAllow: false` with `reason: "lease_conflict"` and `leaseHolder` (not for a key limited to some mailboxes), and one whose lease check could not run comes back as `lease_check_failed` while the others are kept. Each result can also carry `cooldownExpiresAt`, `wouldRequireApproval` with `approvalReason`, and `wouldDefer` with `scheduledFor` (the warmup cap is projected across the whole batch; past the 30-day horizon a recipient is `wouldAllow: false`, `reason: "warmup_horizon_exceeded"`).
 
 ---

@@ -95,7 +95,7 @@ Up to 10 label ids. It combines with the other filters (`mailboxId`, `status`, `
 { "threadId": "thread-uuid", "labelId": "label-uuid", "labelName": "Interested", "mailboxId": "mbx-uuid", "actor": { "type": "agent", "id": "key-uuid" } }
 ```
 
-The payload carries the thread id, so a webhook or `molted listen --json` handler can act on it directly. They only fire for threads in your thread list: a label applied to (or removed from) a thread held in a review queue (quarantine, high risk, blocked by policy, held for the inbound allowance) is recorded but not announced, and a rule that labels such a thread fires nothing. A rule that labels a new thread you can see fires `thread.labeled` with actor `rule`.
+The payload carries the thread id, so a webhook or `molted listen --json` handler can act on it directly. They only fire for threads in your thread list: you can't label a thread held in a review queue (quarantine, spam, high risk, held for the inbound allowance): it is `404 threads_not_found`, like an unknown id. A person's label on such a thread is recorded but not announced, and a rule that labels such a thread fires nothing. A rule that labels a new thread you can see fires `thread.labeled` with actor `rule`.
 
 Deleting a label fires one `label.deleted` (no per-thread events): `{ labelId, labelName, mailboxId, actor, affectedThreads }`, where `affectedThreads` counts the threads in your list that carried it. Drop the label from every thread you mirror.
 

@@ -67,7 +67,7 @@ Returns send volume counts across time windows and an hourly trend for the last 
 GET /v1/agent/analytics/deliverability?period=7d
 ```
 
-Periods: `24h`, `7d`, `30d`. Returns `totalSent`, `delivered`, `bounced`, `complained`, `deliveryRate`, `bounceRate`, `complaintRate`, and `hasData`. `hasData` is `false` when `totalSent` is 0 for the period -- the rates are 0 too, but that means nothing was sent, not a perfect score.
+Periods: `24h`, `7d`, `30d` (default `7d`; anything else is `400 invalid_period`). Returns `totalSent`, `delivered`, `bounced`, `complained`, `deliveryRate`, `bounceRate`, `complaintRate`, and `hasData`. `hasData` is `false` when `totalSent` is 0 for the period -- the rates are 0 too, but that means nothing was sent, not a perfect score.
 
 ### Segment Membership Check
 
@@ -83,7 +83,7 @@ Returns whether the contact is a member of the segment.
 GET /v1/agent/analytics/policy-decisions?period=7d
 ```
 
-Periods: `24h`, `7d`, `30d`. Returns `totalAllowed`, `totalBlocked`, `blockRate`, `hasData`, `blocksByReason`, and `dailyTrend`. `hasData` is `false` when there were no policy decisions in the period -- `blockRate` is 0 too, but that means no data, not "nothing was blocked".
+Periods: `24h`, `7d`, `30d` (default `7d`; anything else is `400 invalid_period`). Returns `totalAllowed`, `totalBlocked`, `blockRate`, `hasData`, `blocksByReason`, and `dailyTrend`. `hasData` is `false` when there were no policy decisions in the period -- `blockRate` is 0 too, but that means no data, not "nothing was blocked".
 
 ### Suppression Analytics
 
@@ -91,6 +91,6 @@ Periods: `24h`, `7d`, `30d`. Returns `totalAllowed`, `totalBlocked`, `blockRate`
 GET /v1/agent/analytics/suppressions?period=7d
 ```
 
-Periods: `24h`, `7d`, `30d`. Returns suppression counts grouped by reason code.
+Periods: `24h`, `7d`, `30d` (default `7d`; anything else is `400 invalid_period`). Returns suppression counts grouped by reason code.
 
 ---

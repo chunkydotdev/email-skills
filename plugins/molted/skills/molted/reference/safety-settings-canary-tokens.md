@@ -10,7 +10,7 @@ Every safety setting (the guardrail flags, per-verdict actions, thresholds and a
 
 ### Spam Filter Rules
 
-The spam-filter subset of the safety settings, served only by the agentic mailbox (`https://mailbox.molted.email`, Bearer token; not proxied by `api.molted.email`). `GET` needs `read`, `PUT` needs `manage`, and an agent's loosening change is a human decision, exactly as for the full settings. No CLI command yet.
+The spam-filter subset of the safety settings, served only by the agentic mailbox (`https://mailbox.molted.email`, Bearer token; not proxied by `api.molted.email`). `GET` needs `read` and `PUT` needs `manage`, both on a key that reaches every mailbox (the rules apply to every mailbox's inbound mail; a key limited to some mailboxes gets `403 mailbox_scope_denied` on either), and an agent's loosening change is a human decision, exactly as for the full settings. No CLI command yet.
 
 ```
 GET /v1/spam-filter/rules
@@ -37,7 +37,7 @@ Authorization: Bearer <api-key>
 | `maxLinksThreshold` | integer | 5 | Max links before excessive_links signal fires. |
 | `blockNoAuth` | boolean | false | Heavy spam penalty (+0.5) when all auth (SPF+DKIM+DMARC) fails. |
 | `blockedKeywords` | string[] | [] | Custom keywords that add +0.4 to spam score per match. |
-| `allowedSenders` | string[] | [] | Exact emails or whole domains whose `spam` verdict is downgraded to clean when the message passes DMARC. Never masks phishing, malware, abuse, impersonation or high injection risk. |
+| `allowedSenders` | string[] | [] | Exact emails or bare domains (a domain also covers its subdomains; no wildcards, `400 invalid_allowed_sender`) whose `spam` verdict is downgraded to clean when the message passes DMARC. Never masks phishing, malware, abuse, impersonation or high injection risk. |
 | `spamActionLowConfidence` | string | deliver | Action for a `spam` verdict with confidence below 0.5. One of: deliver, quarantine, reject. |
 
 ### Canary Tokens

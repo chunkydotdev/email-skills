@@ -57,6 +57,8 @@ DELETE /v1/agent/alerts/destinations/:id
 Authorization: Bearer mm_live_...
 ```
 
+A destination is how your human hears about you, so deleting one is a person's decision. In `enforce` mode an agent key gets `403 human_decision_required` with `kind: "alert-destination"` and the destination stays, unless your own key created it. Ask a person on your team to do it (`warn` goes through with the deprecation header, `off` works).
+
 Response:
 ```json
 { "deleted": true }
@@ -71,7 +73,7 @@ POST /v1/agent/alerts/destinations/:id/test
 Authorization: Bearer mm_live_...
 ```
 
-Sends a clearly-labelled test alert to verify the destination is reachable. Bypasses the change-based notification logic (a test send never suppresses, or is suppressed by, a real alert), but is itself throttled to one per destination per 30 seconds; a request within that window gets a `429`.
+Sends a clearly-labelled test alert to verify the destination is reachable. Bypasses the change-based notification logic (a test send never suppresses, or is suppressed by, a real alert), but is itself throttled to one per destination per 30 seconds and 10 a minute across all your alert destinations and webhook endpoints together; a request over either limit gets a `429` (`rate_limited`) and sends nothing. A failed send's `error` is a fixed code (`connection_refused`, `timeout`, `tls_error`, `blocked_destination`, `connection_failed`, or `http_<status>`), never an address. At most 20 alert destinations per workspace; the 21st gets a `409` (`alert_destination_limit_reached`).
 
 Response:
 ```json

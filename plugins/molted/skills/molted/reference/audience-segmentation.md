@@ -39,7 +39,7 @@ POST /v1/segments
 | `account_field` | Filter on account/company fields |
 | `metadata` | Filter on custom contact metadata |
 | `firmographic` | Filter on firmographic data (industry, size) |
-| `behavioral` | Filter on event counts within a time window |
+| `behavioral` | Filter on event counts within a time window: `behavioralWindow.windowDays` (a whole number from 1 to 365, default 90 when left out; anything else is a `400 invalid_behavioral_window`) is the lookback |
 
 ### Filter Operators
 

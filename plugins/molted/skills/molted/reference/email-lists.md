@@ -94,7 +94,7 @@ Returns current subscriber counts and send summary:
 GET /v1/agent/lists/:id/stats/growth?period=30d
 ```
 
-Returns daily subscribe/unsubscribe counts. Supported periods: `7d`, `30d`, `90d`, `all`.
+Returns daily subscribe/unsubscribe counts. Supported periods: `7d`, `30d`, `90d`, `all` (default `30d`; anything else is `400 invalid_period`).
 
 ```json
 [
@@ -147,7 +147,7 @@ POST /v1/agent/lists/:id/subscribers
 - `source` is optional, defaults to `"api"`. Valid values: `api`, `import`, `form`, `manual`.
 - The address is matched case/whitespace-insensitively, and `+alias`/Gmail-dot variants (e.g. `bob+news@x.com`, `b.o.b@gmail.com`) resolve to the same contact as `bob@x.com` -- whichever of those addresses was seen first. If the contact doesn't exist under any variant, it is auto-created and stored in one canonical form: the bare address (a display name like `Bob <bob@x.com>` is dropped), lowercased and trimmed, with the domain in ASCII (a Unicode or fullwidth domain converted, a trailing dot dropped).
 - `gmail.com` and `googlemail.com` are one mailbox on a list. Subscribing `jane@googlemail.com` while `jane@gmail.com` is already `active` on the list adds no second subscription: the response is the existing active row (with the gmail.com contact's `contactId`). On a double opt-in list, the same while the other spelling is still `pending`: no second row and no second confirmation.
-- **Once an address has unsubscribed from a list, subscribing it again through this endpoint never reactivates it** -- not even the exact same address, not after deleting and recreating the contact, and not as the other Gmail domain (`jane@googlemail.com` after `jane@gmail.com` unsubscribed, and the reverse; they stay separate contacts, the unsubscribe is copied onto the second one). The response is `{ "status": "unsubscribed", "reason": "previously_unsubscribed", ... }` instead of a normal `active`/`pending` row. The only way back onto a **double opt-in** list is the confirmation email (`GET /v1/lists/confirm`) -- resubscribing re-opens the row as `pending` and re-sends the confirmation (only once per still-pending state), but it still won't go `active` without a click-through. A non-double-opt-in list has no way back in through this endpoint at all once unsubscribed.
+- **Once an address has unsubscribed from a list, subscribing it again through this endpoint never reactivates it** -- not even the exact same address, not after deleting and recreating the contact, and not as the other Gmail domain (`jane@googlemail.com` after `jane@gmail.com` unsubscribed, and the reverse; they stay separate contacts, the unsubscribe is copied onto the second one). The response is `{ "status": "unsubscribed", "reason": "previously_unsubscribed", ... }` instead of a normal `active`/`pending` row. The only way back onto a **double opt-in** list is the confirmation email (the link opens `/v1/lists/confirm`, whose GET only shows a Confirm button; the POST behind the button subscribes) -- resubscribing re-opens the row as `pending` and re-sends the confirmation (only once per still-pending state), but it still won't go `active` until the person presses Confirm. A non-double-opt-in list has no way back in through this endpoint at all once unsubscribed.
 
 #### Unsubscribe a contact
 

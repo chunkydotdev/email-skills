@@ -8,7 +8,7 @@ Regenerate with: node scripts/sync-molted-skill.mjs
 
 When multiple agents operate on the same tenant, use coordination primitives to prevent conflicts.
 
-The agent registry, leases and consensus votes are shared by every mailbox, so register, lease, release, list leases, create consensus and vote need a key that reaches every mailbox (a mailbox-scoped key gets `403 mailbox_scope_denied`) with a write-level scope (`automation`, `manage` or `admin`; otherwise `403 insufficient_scope`). Heartbeat only needs a valid key for the tenant.
+The agent registry, leases and consensus votes are shared by every mailbox, so register, lease, release, list leases, create consensus, vote, read a consensus request (`GET consensus/:id`) and read an agent's config (`GET agents/:agentId/config`) need a key that reaches every mailbox (a mailbox-scoped key gets `403 mailbox_scope_denied`) with a write-level scope (`automation`, `manage` or `admin`; otherwise `403 insufficient_scope`). Heartbeat takes any valid key, with one limit: a key limited to some mailboxes that is not bound to an agent may only refresh an agent no key is bound to, and only while that agent has heartbeated in the last 5 minutes (`403 agent_inactive` otherwise, with how to fix it: bind the key with `register_agent` and `bind_key: true` from a workspace key).
 
 **CLI:** `molted agents register|heartbeat|lease|release-lease|leases`, `molted agents consensus create|get|vote`, `molted agents config|update-config`. **MCP:** `register_agent`, `heartbeat`, `acquire_lease`, `release_lease`, `list_leases`, `create_consensus`, `get_consensus`, `vote`.
 
@@ -119,7 +119,7 @@ POST /v1/agent/coordination/lease
 
 If you get a conflict: wait until `expiresAt` or try a different contact.
 
-Sends to a leased contact by a non-holder agent are blocked with reason `lease_conflict`. The holder is the agent the sending API key is bound to, so a bound key's own sends go through (batch sends are not checked against leases).
+Sends to a leased contact by a non-holder agent are blocked with reason `lease_conflict`. The holder is the agent the sending API key is bound to, so a bound key's own sends go through (a batch send checks each recipient the same way: a recipient under someone else's lease comes back `"status": "blocked"`, `"reason": "lease_conflict"` while the rest of the batch goes ahead). A retry of a send you already made (same `dedupeKey`) is never blocked by a lease taken since: it returns the original `requestId`. A lease matches the address however it is cased. If the lease check itself cannot run, the send is refused with `503` `lease_check_failed` (a batch entry comes back `error` with that reason) instead of going out; retry with the same `dedupeKey`.
 
 ### List Active Leases
 
@@ -206,7 +206,7 @@ The vote response includes the current consensus status:
 }
 ```
 
-Status progresses: `pending` → `approved` | `rejected` | `expired`. After each vote the request is `approved` once approve votes reach a strict majority (more than half, at least one vote) of the tenant's active agents (a heartbeat or registration in the last 5 minutes), else `rejected` once reject votes do, where the approving (rejecting) side must also outnumber the other (votes from agents that have since gone inactive still count); an exact tie stays `pending`. A key bound to an agent votes, leases, heartbeats and releases only as that agent: naming another is `403` `agent_mismatch`, and omitting the agent uses the key's. A key with no bound agent may name only agents no key is bound to (`403` `agent_bound_to_key` otherwise), and release only their leases. A vote on a request that is already decided or expired, or past its `timeoutAt`, returns `409` `{ "error": "consensus_closed", "status": "<current status>" }` and is not recorded. `vote` must be `approve` or `reject` (`400` otherwise).
+Status progresses: `pending` → `approved` | `rejected` | `expired`. After each vote the request is `approved` once approve votes reach a strict majority (more than half, at least one vote) of the tenant's active agents (a heartbeat or registration in the last 5 minutes), else `rejected` once reject votes do, where the approving (rejecting) side must also outnumber the other (votes from agents that have since gone inactive still count); an exact tie stays `pending`. A vote counts as the voter's own heartbeat before the votes are counted; if no registered agent is active at all, nothing can be approved (an `approve` vote is recorded and the request stays `pending` until it times out, while a `reject` still rejects). A key bound to an agent votes, leases, heartbeats and releases only as that agent: naming another is `403` `agent_mismatch`, and omitting the agent uses the key's. A key with no bound agent may name only agents no key is bound to (`403` `agent_bound_to_key` otherwise), and release only their leases. A vote on a request that is already decided or expired, or past its `timeoutAt`, returns `409` `{ "error": "consensus_closed", "status": "<current status>" }` and is not recorded. `vote` must be `approve` or `reject` (`400` otherwise).
 
 ### Agent Config
 

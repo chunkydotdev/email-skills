@@ -47,17 +47,29 @@ PATCH /v1/journeys/:id
 { "status": "active" }
 ```
 
-Statuses: `active` (processing), `paused` (stops new enrollments; in-flight runs are parked and resume automatically once active again), `archived` (stops processing and cancels every in-flight run -- not permanent, set status back to `active` to reactivate).
+An unknown journey, or one in another workspace, returns `404 Journey not found`. Statuses: `active` (processing), `paused` (stops new enrollments; in-flight runs are parked and resume automatically once active again), `archived` (stops processing and cancels every in-flight run -- not permanent, set status back to `active` to reactivate).
 
 ### Stop on a Reply
 
 A journey stops for a contact once they reply: `exitOnReply` (create and update, default `true`; `exit_on_reply` on reads). When a message from a run's contact (same workspace, address matched normalized: case, `+tags` and Gmail dots ignored) arrives after the journey has sent them at least one email, every active run of a journey with `exitOnReply` for that contact is cancelled: status `cancelled`, reason `contact_replied` in the run's `context.cancelReason` and the `journey.cancelled` event, and any of the run's sends waiting for approval are rejected. Automatic replies (out of office), delivery notices, spam, and mail the safety check quarantined or rejected never count; an opt-out does, and so does a clean reply held for a person's review. Set `"exitOnReply": false` for a journey that should keep sending after a reply (`PATCH /v1/journeys/:id`, which applies to runs already in flight).
+
+### Weekdays Only
+
+A journey can hold a send that falls on a Saturday or Sunday until Monday: `weekdaysOnly` (create and update, default `false`; `weekdays_only` on reads). The weekend is judged in a time zone, never UTC, and there is no default zone: `timezone` (an IANA name such as `America/Los_Angeles`; `timezone` on reads) is required whenever `weekdaysOnly` is on. A `400` comes back for `weekdaysOnly: true` with no zone stored or given, for clearing the zone while it is on, and for an unknown zone. A contact's own `timezone` (see Contacts) wins over the journey's when it has one; a contact with none uses the journey's. `weekendHoldUntil` (24-hour local `HH:MM`, `400` otherwise; `weekend_hold_until` on reads) sets when a held send goes out on Monday. Unset, it goes out on Monday at the same local time it was due. `timezone` and `weekendHoldUntil` take `null` to clear them. Only `send` steps are held; `delay` and `branch` steps are not, and a delay after a held send counts from when that send went out. Daylight saving changes are handled in the zone. A held send writes nothing and uses no quota until it goes out; the run stays `active`.
+
+```json
+{ "weekdaysOnly": true, "timezone": "America/Los_Angeles", "weekendHoldUntil": "09:00" }
+```
+
+CLI: `molted journeys create|update --weekdays-only --timezone <iana> --weekend-hold-until <HH:MM>`, with `--no-weekdays-only`, `--no-timezone` and `--no-weekend-hold-until` on update. MCP: `create_journey` and `activate_journey` take `weekdays_only`, `timezone` and `weekend_hold_until`.
 
 ### Add Steps
 
 ```
 POST /v1/journeys/:id/steps
 ```
+
+Adding a step to an `active` journey returns `400 Cannot modify steps on an active journey`: pause it first. `tenantId` in a journey write body is optional with a Bearer API key (the key decides the workspace).
 
 ```json
 {

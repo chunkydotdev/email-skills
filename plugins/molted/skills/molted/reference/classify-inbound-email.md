@@ -50,7 +50,8 @@ Response:
     "safety": [],
     "injectionRiskLevel": "none",
     "injectionScore": 0,
-    "injectionMatchedPatterns": []
+    "injectionMatchedPatterns": [],
+    "contentTrust": "untrusted"
   },
   "intent": "unclassified",
   "confidence": 0.5,

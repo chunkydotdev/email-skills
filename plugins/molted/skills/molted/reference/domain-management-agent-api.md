@@ -113,6 +113,8 @@ DELETE /v1/agent/domains/:domainId
 
 Response: `{ "deleted": true }`.
 
+Removing a domain stops all sending on it, so it is a person's decision. In a workspace in `enforce` mode an agent key gets `403 human_decision_required` with `kind: "domain-delete"` and nothing is removed: ask a person to remove it in the portal under Settings > Domains. In `warn` mode it goes through with a `Molted-Deprecation: human-gate` header; with the gate `off` it works.
+
 ### Get Domain Warmup Status
 
 Check the warmup progress for a domain. New domains have daily send limits that gradually increase over ~28 days to build sender reputation.
@@ -145,7 +147,7 @@ If the domain isn't verified yet (or is otherwise not usable as a sender), `warm
 When a marketing send would exceed today's warmup cap, the API schedules it to the earliest future day that still has capacity instead of blocking, returning `status: 'scheduled'` with `reason: 'warmup_defer'` (`warmup_defer`). Transactional sends (template id starts with `_`, or `templates.type = 'transactional'`) are still hard-rejected with `warmup_limit` so they don't get silently delayed.
 
 - The rule is fixed by the template type today: marketing defers, transactional blocks, on `POST /v1/agent/request-send` and on every item of `POST /v1/agent/batch/request-send`.
-- `deferOnWarmup` (`true` to force deferral, `false` to force a hard reject) is accepted on `POST /v1/agent/request-send` but **not yet honoured** (#1300): any value is ignored and the default above applies.
+- `deferOnWarmup` on `POST /v1/agent/request-send` overrides that rule for one send: `true` forces deferral (even for a transactional template), `false` forces a hard reject with `warmup_limit`. It must be a boolean (`400` otherwise). Omit it to get the template-type default. A batch has no such field: every item follows the template-type rule.
 - If the caller also passes `scheduledAt`, the explicit schedule wins and the send is still hard-rejected on over-limit (we don't auto-shift explicit schedules).
 
 Deferred responses look like:

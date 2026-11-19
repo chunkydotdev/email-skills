@@ -60,7 +60,7 @@ data: {"reason":"buffer_overflow"}
 | `inbound.classified` | Inbound email classified. Payload: `{ classificationId, platformLabel, autoReplyKind, intent, confidence }` (`intent`/`confidence` deprecated) |
 | `inbound.routed` | Inbound email routed to a handler |
 | `inbound.held` | An inbound message landed held from agents, for a person to review (an anomaly hold a person decides, or the used-up inbound allowance: payload `holdReason: "inbound_quota"`) |
-| `inbound.released` | Held mail reached your agents (`reason`: `inbound_quota` or `mailbox_restored`) |
+| `inbound.released` | Held mail reached your agents (`reason`: `inbound_quota` or `mailbox_restored`). Not sent for a message whose thread is still held for review (a person decides it first) |
 | `handoff.requested` | An agent asked for a human to take a thread |
 | `handoff.taken`, `handoff.returned`, `handoff.closed` | A person took the thread, handed it back, or the handoff was closed |
 | `mailbox.paused`, `mailbox.resumed` | A person paused or resumed sending from a mailbox in the portal |
