@@ -32,16 +32,24 @@ git clone https://github.com/chunkydotdev/email-skills.git
 git submodule add https://github.com/chunkydotdev/email-skills.git skills/email
 ```
 
-### Claude Code plugin
+### Claude Code and Codex plugin
 
 Building an agent that needs to send, receive, or classify email? `plugins/molted` packages a
-Claude Code plugin: MCP tools for [Molted](https://molted.email), a `/molted:setup` command, and the
-`molted` skill (integration-focused, not the general deliverability/compliance skills below). See
-[`plugins/molted/README.md`](plugins/molted/README.md).
+plugin for Claude Code and Codex: MCP tools for [Molted](https://molted.email) with OAuth sign-in,
+a `setup` skill, and the `molted` skill (integration-focused, not the general
+deliverability/compliance skills below). See [`plugins/molted/README.md`](plugins/molted/README.md).
+
+Claude Code:
 
 ```
 /plugin marketplace add chunkydotdev/email-skills
 /plugin install molted@email-skills
+```
+
+Codex:
+
+```
+codex plugin marketplace add chunkydotdev/email-skills
 ```
 
 ## Available skills

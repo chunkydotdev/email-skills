@@ -198,7 +198,7 @@ function main() {
     "",
     "The workflow force-updates this branch on every run while the drift lasts and closes this PR once its base branch matches upstream again. A pull request opened with `GITHUB_TOKEN` doesn't trigger workflows, so no checks show here: the run linked above is the check.",
     "",
-    "Bump `version` in `plugins/molted/.claude-plugin/plugin.json` on this branch if installed plugins should pick the change up.",
+    "Bump `version` in `plugins/molted/.claude-plugin/plugin.json` and `plugins/molted/plugin.json` on this branch if installed plugins should pick the change up.",
     "",
   ].join("\n");
   writeFileSync(bodyPath, body, "utf8");

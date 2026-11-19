@@ -2,10 +2,7 @@
   "mcpServers": {
     "molted": {
       "type": "http",
-      "url": "https://mcp.molted.email/mcp",
-      "headers": {
-        "Authorization": "Bearer ${user_config.api_key}"
-      }
+      "url": "https://mcp.molted.email/mcp"
     }
   }
 }

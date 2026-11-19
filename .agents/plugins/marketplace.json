@@ -1,0 +1,20 @@
+{
+  "name": "email-skills",
+  "interface": {
+    "displayName": "Molted email skills"
+  },
+  "plugins": [
+    {
+      "name": "molted",
+      "source": {
+        "source": "local",
+        "path": "./plugins/molted"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
