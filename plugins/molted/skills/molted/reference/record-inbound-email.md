@@ -54,6 +54,8 @@ If `mailboxId` is omitted, the system auto-resolves it by matching `toEmail` aga
 | `mailboxId` | no | Mailbox that received this email. Auto-resolved from `toEmail` if not provided. |
 | `threadId` | no | Explicit thread ID to link to an existing thread |
 
+The subject and the sender's display name are cleaned on arrival: control characters, bidirectional overrides (U+202A-U+202E, U+2066-U+2069), zero-width and tag characters are removed, line breaks, tabs, U+2028 and U+2029 become a space, the subject is cut at 1,024 bytes, and an address header (From, Reply-To, Cc) is read up to 2,048 characters. The body is untouched.
+
 After recording, the email is automatically queued for classification and routing. A recorded email has no headers, so its `autoReplyKind` is `null` and its `platformLabel` can only be `opt_out` or `null`.
 
 ---

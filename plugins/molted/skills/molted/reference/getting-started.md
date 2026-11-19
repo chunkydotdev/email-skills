@@ -119,6 +119,11 @@ yet, or signs in; then Free is one click, or they buy a plan) or a Stripe
 checkout link (`POST /v1/billing/setup-link`; nothing is charged until they complete it).
 Free is for verified humans only; see [Activate billing](#activate-billing). A key that can
 make neither link (e.g. mailbox-scoped) is told to point its human at the portal.
+On a workspace you signed up yourself, `next.do` names both routes, Free
+(`login-token`) first, while `next.request` is the checkout link. If your account
+email is on a reserved domain with no inbox (example.com, `.test`, `.invalid`), `do`
+says so and the plan step's `details.ownerEmailReserved` is `true`. Then `login-token`
+returns a claim link for your human, never a take-over email.
 
 Call `GET /v1/agent/setup` again after each step.
 
@@ -194,7 +199,10 @@ passes:
 curl https://mailbox.molted.email/v1/adopt/device/ma_dev_.../poll
 ```
 
-Always `200`. `{ "status": "pending" }` until approved; then, on the first poll after the
+`200` unless you poll too fast: the poll is limited per client address, network and code, and past
+the limit it answers `429 rate_limited` with a `Retry-After` header (seconds). Wait that long and
+poll again; the code stays valid. At the 5-second pace you never see it, even with 20 requests
+running from one address. Otherwise `200`. `{ "status": "pending" }` until approved; then, on the first poll after the
 approval only, `{ "status": "complete", apiKey, tenantId, keyId, label, agentId, next }`.
 `{ "status": "invalid" }` for an unknown, expired, revoked or already collected code: start
 over. The CLI does all of this:
@@ -250,13 +258,24 @@ agent key. Revoking is open to both.
 Create an account and get an API key in two calls. (If signups are ever paused, the first
 returns `403 SIGNUPS_CLOSED` with a `waitlistUrl`; see the note at the top.)
 
+**First pick the account email.** It decides how your human gets the Free plan later
+([Activate billing](#activate-billing)).
+
+- **Your human's own email**, if you have it. For Free they get a take-over email, set
+  their own password, and the account becomes theirs.
+- **No address for them?** Use one on `example.com`, like `my-agent-7f3k@example.com`.
+  It is reserved and reaches no one, so `POST /v1/agent/login-token` gives you a claim
+  link to hand your human instead.
+- **Never invent an inbox on a real domain.** The take-over email would go to whoever
+  reads that address, or to no one, and your human never gets Free.
+
 ```
 POST /api/auth/sign-up/email
 Content-Type: application/json
 
 {
   "name": "My Agent",
-  "email": "agent@example.com",
+  "email": "<your human's email>",
   "password": "your-password"
 }
 ```
@@ -355,7 +374,7 @@ Agent-owned tenant:
 }
 ```
 
-**To get Free on an account you signed up, there is one command:** `molted auth login-link --next /app/settings#plan` (`POST /v1/agent/login-token` with `{ "next": "/app/settings#plan" }`). Follow what it returns ([below](#give-your-human-a-link-take-over-claim-or-sign-in)). Either email works for the account: with your human's own address they get a take-over email, with one of your Molted mailboxes you get a claim link to hand them. Once they are done, `activate-free` succeeds, also with your existing key.
+**To get Free on an account you signed up, there is one command:** `molted auth login-link --next /app/settings#plan` (`POST /v1/agent/login-token` with `{ "next": "/app/settings#plan" }`). Follow what it returns ([below](#give-your-human-a-link-take-over-claim-or-sign-in)). What it returns depends on the account email ([Sign up](#sign-up)). With your human's own address they get a take-over email. With an address on a reserved domain that has no inbox (example.com, example.net, example.org, `.test`, `.example`, `.invalid`, `.localhost`) or one of your Molted mailboxes, you get a claim link to hand them. An address you made up on a real domain gets the take-over email too, so it reaches a stranger or no one: never sign up with one. Once they are done, `activate-free` succeeds, also with your existing key.
 
 Human-owned tenant, email not verified yet:
 ```json
@@ -396,6 +415,10 @@ Content-Type: application/json
 ```
 
 `plan` is `"solo"` ($19/mo) or `"team"` ($79/mo) and defaults to `"solo"` if omitted (the old names `"starter"` and `"growth"` still work and check out Solo and Team). `successUrl` and `cancelUrl` are optional; omit them and the human lands back on the portal's Settings -> Plan page (`/app/settings#plan`) after completing or canceling the Stripe checkout, which shows the tenant's plan as active (or activating) or confirms nothing was charged. A tenant's first paid plan starts with a **3-day trial** on restricted limits (100 sends in total, 3 mailboxes, 1 custom domain) when billing status says `"trialEligible": true` (a workspace made for a returning address checks out without one); send `"skipTrial": true` to skip the trial and be charged at checkout.
+
+`503` `checkout_unavailable`: this server has no Stripe price configured for the plan, so no payment link can be created. Nothing is wrong with your request and retrying will not help: use Free (when the owner is a verified human) or ask whoever runs the server to configure checkout. An unknown plan name is `400` `invalid_plan`, a different error.
+
+`409` `deletion_pending`: the workspace is scheduled for deletion, so checkout is refused. A person cancels the deletion first (Settings), then starts the plan.
 
 Response:
 ```json
@@ -447,7 +470,7 @@ This is a money decision, so it is **human-only by default**: it needs an `admin
 
 `limits` in the billing status response carries every column above (`monthlyInboundLimit` and `monthlyHumanizerLimit` for the last two), plus `teamInvites`: whether the plan lets a person invite people into the workspace (Solo, Team and Enterprise, and a paid plan's trial; not Free, the pre-payment trial or an expired plan). Inviting people is done by a person in the portal, never by an agent.
 
-**Inbound allowance (#1469):** received email counts toward Inbound/mo, never toward the send limits. Quarantined mail (spam, phishing, malware, injection) never counts. Inbound is never rejected: past the allowance, Solo and Team keep delivering and bill inbound overage (about $0.50 per 1,000); Free (and the pre-payment trial state) store it but hold it from agents until next month, or until the account moves to a paid plan (released at once; a paid plan's 3-day trial holds past its 300 until the trial ends); expired accounts (plan ended, or a payment grace period ran out) store all new inbound but hold it until the account pays (checkout, or a paid invoice ending a grace period) or support sets a plan: released at once; Free is not a way back from expired, never at a month rollover, and the owner gets one "N emails are waiting" email a month. While held: `GET /v1/inbound` lists it with `inbound_quota_held: true`, a placeholder body and `subject`/`from_name`/`reply_to` null; its attachments aren't listed and download is 403 `inbound_quota_held`; raw MIME 403 `inbound_quota_held`; get_context shows no subject; a thread it started stays out of the thread list, and further mail from the same sender joins that thread instead of opening new ones, so the conversation stays in one thread after the release; a manual release or reject returns 409 `inbound_quota_held`. On release, the thread shows up as new mail and `inbound.released` fires (SSE and customer webhooks: `{ messageId, threadId, threadMessageId, mailboxId, reason: "inbound_quota" }`). Upgrading from Free has no trial. On Solo/Team the owner also gets one email a month at twice the allowance. Billing status has `inbound: { allowance, used, remaining, overAllowance, overage, held, heldReason: "over_allowance" | "paid_trial" | "plan_expired" | null, overAllowanceBehavior: "overage" | "hold" | "deliver", overagePricePer1kCents, warning }` (`warning`: `inbound_allowance_used_hold`, `inbound_allowance_used_overage` or `inbound_plan_expired_hold`), and `GET /v1/agent/budget` has `inbound: { used, limit, remaining, held, heldReason, overAllowanceBehavior }`.
+**Inbound allowance (#1469):** received email counts toward Inbound/mo, never toward the send limits. Quarantined mail (spam, phishing, malware, injection) never counts. Inbound is never rejected: past the allowance, Solo and Team keep delivering and bill inbound overage (about $0.50 per 1,000); Free (and the pre-payment trial state) store it but hold it from agents until next month, or until the account moves to a paid plan (released at once; a paid plan's 3-day trial holds past its 300 until the trial ends); expired accounts (plan ended, or a payment grace period ran out) store all new inbound but hold it until the account pays (checkout, or a paid invoice ending a grace period) or support sets a plan: released at once; Free is not a way back from expired, never at a month rollover, and the owner gets one "N emails are waiting" email a month. While held: `GET /v1/inbound` lists it with `inbound_quota_held: true`, a placeholder body and `subject`/`from_name`/`reply_to` null; its attachments aren't listed and download is 403 `inbound_quota_held`; raw MIME 403 `inbound_quota_held`; get_context shows no subject; a thread it started stays out of the thread list, and further mail from the same sender joins that thread instead of opening new ones, so the conversation stays in one thread after the release; a manual release or reject returns 409 `inbound_quota_held`. On release, the thread shows up as new mail and `inbound.released` fires (not when a quarantine or spam verdict keeps the thread held for a person to review: it stays out of your list and no event fires) (SSE and customer webhooks: `{ messageId, threadId, threadMessageId, mailboxId, reason: "inbound_quota" }`). Upgrading from Free has no trial. On Solo/Team the owner also gets one email a month at twice the allowance. Billing status has `inbound: { allowance, used, remaining, overAllowance, overage, held, heldReason: "over_allowance" | "paid_trial" | "plan_expired" | null, overAllowanceBehavior: "overage" | "hold" | "deliver", overagePricePer1kCents, warning }` (`warning`: `inbound_allowance_used_hold`, `inbound_allowance_used_overage` or `inbound_plan_expired_hold`), and `GET /v1/agent/budget` has `inbound: { used, limit, remaining, held, heldReason, overAllowanceBehavior }`.
 
 **Free is for people, paid plans for agents.** A tenant an agent created (CLI or API signup) can't activate Free; buy Solo or Team with `POST /v1/billing/setup-link` and hand the returned checkout `url` to a person. Nothing is charged until someone completes the checkout.
 
@@ -486,8 +509,9 @@ While **no person owns the workspace yet** (you created it, e.g. with
 `molted auth signup`), the answer depends on the email your account signed up with.
 
 **Your account's email is an outside inbox** (your human's own address, say:
-not one of your Molted mailboxes, not a disposable domain). Molted emails that
-address a link to set a password and take the account over, and you get no link:
+not one of your Molted mailboxes, not a disposable domain, not a reserved domain
+like example.com). Molted emails that address a link to set a password and take
+the account over, and you get no link:
 
 ```json
 {
@@ -509,7 +533,9 @@ call within 15 minutes sends nothing and answers `"alreadySent": true` with the
 open link's expiry (at most 5 emails a day per account).
 
 **Your account's email is one of your Molted mailboxes** (or a domain receiving
-through Molted), you get a claim link:
+through Molted), or an address no take-over email can reach (a reserved domain
+with no inbox, like example.com, `.test` or `.invalid`, or a disposable one), you
+get a claim link:
 
 ```json
 {

@@ -39,7 +39,7 @@ Response:
 
 ### Update Safety Settings
 
-PUT is a partial update - only fields you include are changed (a `null` keeps the current value). An unknown field is a `400`. Needs a key that reaches every mailbox with the `manage` scope (`403 mailbox_scope_denied` / `insufficient_scope` otherwise); `GET` needs only a valid key.
+PUT is a partial update - only fields you include are changed (a `null` keeps the current value). An unknown field is a `400`. Needs a key that reaches every mailbox with the `manage` scope (`403 mailbox_scope_denied` / `insufficient_scope` otherwise); `GET` needs only a valid key, but a key limited to some mailboxes gets the settings without `blockedKeywords` and `allowedSenders` (they name senders and patterns of every mailbox's inbound mail), and the response says so with `"redacted": ["blockedKeywords", "allowedSenders"]`.
 
 ```
 PUT /v1/agent/config/safety-settings
@@ -75,7 +75,7 @@ Guardrail flags (boolean):
 
 Allow/deny lists:
 - `blockedKeywords` (string[], max 100) - each matching keyword adds +0.4 to the spam score
-- `allowedSenders` (string[], max 100) - exact addresses or whole domains. A match only ever downgrades a `spam` verdict to clean, and only when the message passes DMARC; it never masks phishing, malware, abuse, impersonation or a high injection risk (the same rule as the [Sender Allow-List](#sender-allow-list))
+- `allowedSenders` (string[], max 100) - an exact address (`bob@acme.com`) or a bare domain (`acme.com`, which also covers its subdomains such as `mail.acme.com`, never `evilacme.com`). Entries are trimmed and lowercased, `@acme.com` is stored as `acme.com`, and a wildcard (`*.acme.com`), a display name, a public suffix or a bare free-mail or shared-hosting domain (`gmail.com`, `amazonaws.com`; a full address like `alice@gmail.com` is fine) is a `400 invalid_allowed_sender`. Entries match the sender's ASCII or punycode form; a raw UTF-8 From never matches. A match only ever downgrades a `spam` verdict to clean, and only when the message passes DMARC; it never masks phishing, malware, abuse, impersonation or a high injection risk (the same rule as the [Sender Allow-List](#sender-allow-list))
 
 **Agents may tighten, never loosen.** For an agent key, a change that loosens is a human decision (`403 human_decision_required` with a `decisionUrl` in `enforce` mode, see [Decisions need a human](#decisions-need-a-human)): turning a guardrail flag off, a weaker action (`reject` > `quarantine` > `deliver`), raising `spamThreshold` or `maxLinksThreshold`, removing a `blockedKeywords` entry, or adding an `allowedSenders` entry. The opposite changes always work.
 

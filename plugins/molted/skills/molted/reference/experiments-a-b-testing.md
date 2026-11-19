@@ -29,13 +29,15 @@ Authorization: Bearer mm_live_...
   "type": "ab",
   "segmentId": "seg_123",
   "variants": [
-    { "id": "v1", "name": "Control", "weight": 50, "templateVersionId": "tv_1", "isControl": true, "isHoldout": false },
-    { "id": "v2", "name": "Casual Subject", "weight": 50, "templateVersionId": "tv_2", "isControl": false, "isHoldout": false }
+    { "id": "v1", "name": "Control", "weight": 50, "templateVersionId": "<version-uuid-1>", "isControl": true, "isHoldout": false },
+    { "id": "v2", "name": "Casual Subject", "weight": 50, "templateVersionId": "<version-uuid-2>", "isControl": false, "isHoldout": false }
   ]
 }
 ```
 
 `journeyId`, `journeyStepId` and `segmentId` must belong to your workspace (a deleted journey does not count, and a given step must belong to the given journey), else `404` (`journey_not_found`, `journey_step_not_found`, `segment_not_found`), the same answer as for an id that does not exist. A malformed id (not a UUID) is `400 invalid_id`.
+
+A variant's `templateVersionId` is the template version that variant sends: its subject and body are rendered from it, and the send records that version. It must be a version UUID of a template in your workspace (`400 invalid_id` if malformed, the same `404 template_version_not_found` if unknown, deleted or another workspace's, on create and on `start`). `null` sends the step's own template. If a variant's version cannot be resolved when the step runs (deleted since, or not yours), the contact gets the step's own template instead of failing the run. That send is not assigned to the variant and is not counted in its results, and the workspace gets one `experiment_variant_unresolved` alert per experiment per day. `timingDelayMinutes` is not supported yet: anything but `null` or `0` is `400 variant_timing_not_supported` on create and on `start`.
 
 ### Start / Stop
 
@@ -43,6 +45,8 @@ Authorization: Bearer mm_live_...
 POST /v1/experiments/:id/start
 POST /v1/experiments/:id/stop
 ```
+
+Start works only on a `draft` experiment and stop only on a `running` one. An unknown experiment id (on these, on `GET /v1/experiments/:id` and on results) is `404 experiment_not_found`; a wrong state is `409 experiment_wrong_state` with the current `status`. Neither answers an empty `200` any more.
 
 ### Get Results
 

@@ -76,10 +76,11 @@ Authorization: Bearer mm_live_...
 
 Response: `{ "added": 2, "results": [{ "id": "..." }, { "id": "..." }] }`
 
-Caveats (the CLI's `suppressions import` handles all of these for you):
-- Almost no request-body validation: only that `entries` is an array (`400` otherwise) and that no entry uses the reserved `source: "portal_keep_away"` (`400 reserved_source`, checked before anything is written). Nothing checks that `recipientEmail` is present or that `scope`/`reasonCode` are accepted values -- a malformed entry can land a bad row. Validate `recipientEmail`, `scope`, `reasonCode`, and that `campaignId` is set when `scope` is `campaign`, yourself before sending.
-- `scope: "global"` still 403s (`global_scope_not_allowed`), but it does so **partway through the array**: entries before it in the same request are already committed since each row is inserted individually, not in one transaction (tracked in #1907). Filter out `global` entries first.
-- No cap on `entries` length, but the request body is capped by the API's ~100 KB JSON limit and the mailbox proxy's 30s timeout -- chunk large imports (the CLI uses 500 rows per request).
+Validation (the CLI's `suppressions import` checks the same rules before it sends):
+- Each entry needs a valid `recipientEmail`, a `scope` of `tenant` or `campaign`, and a `reasonCode` from the table above. `campaignId` is required when `scope` is `campaign`. `expiresAt`, when given, is an ISO 8601 timestamp. An invalid entry is a `400` that names it by position (`entries.2.recipientEmail must be an email` is the third entry).
+- The request is all or nothing: it runs in one transaction, so a `400` (or any failure) leaves the suppression list exactly as it was. `scope: "global"` is `403 global_scope_not_allowed`, checked before anything is written, and the message names the entry.
+- At most 1,000 entries per request (`400` over that), and the request body is capped at 100 KB on the mailbox (up to 2 MB for a caller whose key verifies, then the API's ~100 KB JSON limit applies) and by the mailbox proxy's 30s timeout -- chunk large imports (the CLI uses 500 rows per request).
+- `entries` must be an array (`400` otherwise), and no entry may use the reserved `source: "portal_keep_away"` (`400 reserved_source`, checked before anything is written).
 
 ### Check a Suppression
 

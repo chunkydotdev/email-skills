@@ -80,13 +80,12 @@ PATCH /v1/templates/approvals/:approvalId
 
 ```json
 {
-  "reviewedBy": "human-reviewer",
   "decision": "approved",
   "comment": "Looks good"
 }
 ```
 
-Reviewing a template approval is a human decision: a signed-in person in the portal, or an agent only while the account's gate is `off` or `warn`. Otherwise it returns `403 human_decision_required` with a `decisionUrl` (see [Decisions need a human](#decisions-need-a-human)). Only a pending approval can be reviewed: repeating its current decision returns it unchanged, the other decision returns `409` `{ "error": "already_decided", "status": "..." }`, so a rejected version is never published later by approving the same request. Approving a version older than the live one, or than one waiting for review, returns `409` `{ "error": "superseded" }`: reject it instead. In the portal, a person previews the version (with its lint results; a lint error warns but doesn't block) and approves or rejects it from a card on Home.
+Reviewing a template approval is a human decision: a signed-in person in the portal, or an agent only while the account's gate is `off` or `warn`. The approval records who decided from your credentials (`user:<id>` or `key:<id>`); a `reviewedBy` in the body is ignored. Otherwise it returns `403 human_decision_required` with a `decisionUrl` (see [Decisions need a human](#decisions-need-a-human)). Only a pending approval can be reviewed: repeating its current decision returns it unchanged, the other decision returns `409` `{ "error": "already_decided", "status": "..." }`, so a rejected version is never published later by approving the same request. Approving a version older than the live one, or than one waiting for review, returns `409` `{ "error": "superseded" }`: reject it instead. In the portal, a person previews the version (with its lint results; a lint error warns but doesn't block) and approves or rejects it from a card on Home.
 
 ### Test Render
 

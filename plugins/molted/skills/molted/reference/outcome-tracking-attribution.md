@@ -32,9 +32,9 @@ POST /v1/outcomes/ingest
 | `contactEmail` | yes | Contact email to attribute |
 | `eventType` | yes | One of: `activation`, `trial_conversion`, `meeting_booked`, `deal_closed`, `upsell`, `custom` |
 | `eventName` | yes | Human-readable event label |
-| `revenue` | no | Revenue amount attributed to this outcome |
+| `revenue` | no | A decimal currency amount (`99.99`), not cents. A number or numeric string with at most 2 decimals, between -9,999,999,999.99 and 9,999,999,999.99, else `400`. |
 | `metadata` | no | Arbitrary metadata (object) |
-| `occurredAt` | no | ISO 8601 timestamp. Defaults to now if omitted. |
+| `occurredAt` | no | ISO 8601 date or date-time. Defaults to now if omitted; anything else is a 400. |
 
 ### List Outcomes
 

@@ -100,7 +100,7 @@ Deciding an approval (`PATCH /v1/send/approvals/:id`) is a human decision; an ag
 
 #### Mailbox Reputation
 
-Reputation is recalculated automatically after bounces/complaints. When thresholds are breached, the mailbox is auto-paused.
+Reputation is recalculated automatically after bounces/complaints. When thresholds are breached, the mailbox is auto-paused. Reading it never calculates or changes anything: a mailbox with no stored row yet answers its live counts and the status they give, with `calculated: false` and `id: null`; the stored row (`calculated: true`) appears with the first delivery event or `POST .../reputation/recalculate`.
 
 ```
 GET /v1/agent/mailboxes/:id/reputation      — get reputation stats
@@ -131,6 +131,8 @@ PATCH /v1/agent/mailboxes/:id/autonomy  — update autonomy level
 Agents may lower autonomy; raising it is a human decision (`403 human_decision_required`, `kind: "autonomy"`).
 
 ### Threads, Outbound and Overrides
+
+Which send route: to answer a conversation use `POST /v1/agent/outbound/reply` (`molted threads reply`); to start one, or to send with `scheduledAt`, use `POST /v1/agent/request-send` (`molted send`), which also takes a `threadId` and picks the mailbox for you. `POST /v1/agent/outbound/send` is the lower-level route for a send from one named mailbox: it has no `scheduledAt` and no `attachments`.
 
 | Goal | Method | Endpoint |
 |------|--------|----------|

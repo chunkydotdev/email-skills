@@ -60,7 +60,7 @@ PATCH /v1/contacts/:id
 }
 ```
 
-Returns the updated contact, or `404` if it does not exist.
+Returns the updated contact, or `404` if it does not exist. Changing `email` on a contact a person kept agents away from is a human decision for an agent key (`403 human_decision_required` with a `decisionUrl` in `enforce` mode), because Keep agents away is tied to the address.
 
 ### Delete a Contact
 
@@ -93,11 +93,14 @@ POST /v1/contacts/sync
       "name": "Alice Smith",
       "lifecycleStage": "customer",
       "dealStage": "closed_won",
+      "timezone": "America/Los_Angeles",
       "metadata": { "plan": "enterprise" }
     }
   ]
 }
 ```
+
+`timezone` is the person's IANA time zone (create, update and each sync row; an unknown zone is a `400`, and on a sync it refuses the whole call). A weekdays-only journey judges the weekend in it, ahead of the journey's own zone. `null` clears it on update; a sync row that omits it keeps the stored one. It is not read from `metadata`. Contact reads return it as `timezone`.
 
 Response:
 ```json

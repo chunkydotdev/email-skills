@@ -110,6 +110,6 @@ A mailbox-scoped key sees only the sends and inbound messages of its own mailbox
 
 MCP: `get_context` (`contact_email`, `since`, `limit`, `sends_before`, `journey_runs_before`, `inbound_messages_before`). CLI: `molted contacts context <email> [--since] [--limit] [--sends-before] [--journey-runs-before] [--inbound-messages-before]`.
 
-Every `inboundMessages` entry carries `contentTrust: "untrusted"` -- its `subject` came from the contact. See [Untrusted Content](#untrusted-content) below.
+Every `inboundMessages` entry carries `contentTrust: "untrusted"` -- its `subject` came from the contact. A message that is quarantined (`quarantined: true`) has its `subject` replaced by the quarantine placeholder unless the key has `operator` scope and asks with `?includeQuarantined=true` (on `thread-context` and on `GET /v1/ops/timeline`; an `admin` all-mailbox key has operator scope but must still ask). Every `sends` entry carries `contentTrust` too: `"untrusted"` when its `subject` was derived from a contact's subject (a reply sent with no subject of its own is `Re: <the contact's subject>`), `"tenant"` when your agent or a person wrote it. See [Untrusted Content](#untrusted-content) below.
 
 ---

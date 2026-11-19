@@ -61,9 +61,9 @@ POST /v1/agent/request-send
 }
 ```
 
-**Held for approval** (200): `"status": "pending_approval"`, with `reason` (`autonomy_level`, `thread_risk_flagged` or `content_check`) and a `message` saying why. It goes out when a human approves it.
+**Held for approval** (200): `"status": "pending_approval"`, with `reason` (`quarantined_attachment`, `autonomy_level`, `thread_risk_flagged` or `content_check`) and a `message` saying why. It goes out when a human approves it.
 
-A `dedupeKey` you already used answers `"status": "blocked"`, `"reason": "duplicate"`, `"duplicate": true` with the original `requestId`. Another agent's lease on the contact answers `"status": "blocked"`, `"reason": "lease_conflict"`, `"requestId": null` and `leaseHolder`. A thread a human has taken over is a `409`.
+A `dedupeKey` you already used answers `"status": "blocked"`, `"reason": "duplicate"`, `"duplicate": true` with the original `requestId`. Another agent's lease on the contact answers `"status": "blocked"`, `"reason": "lease_conflict"`, `"requestId": null` and `leaseHolder` (a key limited to some mailboxes gets no `leaseHolder`). A thread a human has taken over is a `409`.
 
 **Important:** Blocked sends return HTTP 200 with `status: "blocked"`.
 Always check `status` in the response body, not just the HTTP code.
@@ -75,12 +75,12 @@ Always check `status` in the response body, not just the HTTP code.
 | `tenantId` | no | Only on `api.molted.email`, where it is required; the base URL fills it in from your key |
 | `recipientEmail` | yes | Recipient email address |
 | `templateId` | no (default `_default`) | Template slug (e.g. `welcome`) or template ID. An id starting with `_` (e.g. `_default`, `_followup`) paired with inline `payload.html`/`payload.text` is only the policy bucket (cooldown/dedupe grouping) -- it is never looked up as a stored template, and your inline content is what gets sent. An id without a leading `_` is always resolved as a stored template, even alongside inline `html`/`text`. |
-| `dedupeKey` | yes (or `idempotencyKey`) | Idempotency key: same key = same send, never duplicated. Must be a non-empty, non-whitespace string (e.g. `"workflow-contactId-step"`). Missing or empty is rejected with `400 dedupe_key_required`. |
+| `dedupeKey` | yes (or `idempotencyKey`) | Idempotency key: same key = same send, never duplicated. Must be a non-empty, non-whitespace string of at most 255 characters (e.g. `"workflow-contactId-step"`). Missing or empty is rejected with `400 dedupe_key_required`, a longer one with a `400` validation error (a batch entry gets `dedupe_key_too_long`). |
 | `payload` | no | Template variables (object). With `_default` or another `_` template id, the inline content: `subject` plus `html` and/or `text` |
 | `sendReason` | no | Human-readable context for audit trail |
 | `idempotencyKey` | no | Alias for `dedupeKey` |
 | `mailboxId` | no | Mailbox to send from. When provided, the send is automatically projected into a thread for that contact — replies from the recipient are linked to the same thread. Use `GET /v1/agent/threads` to track the conversation. Recommended. |
-| `threadId` | no | Existing thread to send into: the queued, scheduled or held send shows up in that thread, whichever route you used. The send goes out from the thread's mailbox: leave `mailboxId` out, or pass that same mailbox (another one is `400 thread_mailbox_mismatch`). An unknown thread is `404`; a thread in a mailbox outside your key's scope is `403 mailbox_scope_denied`. Cooldown is skipped only when the recipient is the thread's contact (or the Reply-To its inbound mail resolves to) and they have written since your last message to them in the thread (one reply per message received); another recipient's thread id, or a thread with nothing new from them, doesn't lift it. |
+| `threadId` | no | Existing thread to send into: the queued, scheduled or held send shows up in that thread, whichever route you used. The send goes out from the thread's mailbox: leave `mailboxId` out, or pass that same mailbox (another one is `400 thread_mailbox_mismatch`). An unknown thread is `404`, and so is one in a deleted (archived) mailbox or one held in a review queue, all with the same `Thread "<id>" not found` message; a thread in a mailbox outside your key's scope is `403 mailbox_scope_denied`. Cooldown is skipped only when the recipient is the thread's contact (or the Reply-To its inbound mail resolves to) and they have written since your last message to them in the thread (one reply per message received); another recipient's thread id, or a thread with nothing new from them, doesn't lift it. |
 | `attachments` | no | Array of attachment refs: `[{ "id": "uuid", "filename": "report.pdf", "contentType": "application/pdf" }]`. Upload first via `POST /v1/attachments`. |
 | `scheduledAt` | no | ISO 8601 timestamp to defer the send to a specific future time (e.g. `"2026-03-24T09:00:00Z"`). Must be at least 60 seconds and at most 1 year ahead, and a string needs an explicit UTC offset or `Z` (`400` otherwise); impossible dates such as `2030-02-30` are refused. The value is stored and echoed as the normalized UTC instant. When set, the send is enqueued with a delay and returns `status: "scheduled"`. |
 | `replyTo` | no | Where the recipient's replies go: one plain address (e.g. `"visitor@gmail.com"`). See [Reply-To](#reply-to) below. Omit it and replies come back to the sending mailbox. |
@@ -128,6 +128,7 @@ Every send is checked against these rules (in order). If any fails, the send is 
 | Overage cap | `overage_cap_exceeded` | Exceeded overage hard cap |
 | Missing recipient email | `recipient_email_required` | Batch send entry had no `email`/`recipientEmail` — returned per-recipient in `results[]` so the rest of the batch still processes |
 | Missing dedupe key | `dedupe_key_required` | Batch send entry had no `dedupeKey` (or it was empty/whitespace-only). Returned per-recipient in `results[]`. The CLI auto-generates a dedupeKey for batch entries that omit one; direct API callers must provide one explicitly. |
+| Dedupe key too long | `dedupe_key_too_long` | The `dedupeKey` (or `idempotencyKey`) is over 255 characters. A single send is a `400` validation error (`dedupeKey must be at most 255 characters`); a batch entry is returned per-recipient in `results[]`. Shorten it or hash it. |
 | Duplicate dedupeKey in batch | `duplicate_in_batch` | Two or more entries in the same batch shared a `dedupeKey`. The first occurrence is processed normally; subsequent ones are returned as `status: "error"` with this reason (and an empty `requestId`) so caller-side de-dup is unambiguous. |
 | Negative signals | `negative_signal_budget_exceeded` | Too many bounces + complaints in 24h |
 | Warmup limit | `warmup_limit` | Exceeded daily warmup limit (transactional sends / `deferOnWarmup: false`) |
@@ -136,11 +137,13 @@ Every send is checked against these rules (in order). If any fails, the send is 
 | Sending-domain rate limit | `domain_minute_limit_exceeded`, `domain_hourly_limit_exceeded`, `domain_daily_limit_exceeded` | Exceeded a rate limit you set on the sending domain (`PATCH /v1/agent/domains/:id/rate-limits`) |
 | Missing physical address | `missing_physical_address` | A marketing template send while the tenant has no physical (postal) address on file (CAN-SPAM); set `physicalAddress` in tenant settings |
 | Lease conflict | `lease_conflict` | Another agent holds a lease on this contact |
+| Lease check failed | `lease_check_failed` | The contact lease check could not run, so nothing was sent (a single send is a `503` with this error code, a batch entry is `"status": "error"`); retry with the same `dedupeKey` |
 | Canary violation | `canary_violation` | Canary token leaked in outbound payload |
 | Mailbox not active | `mailbox_not_active` | Explicit mailbox is in provisioning/paused state |
 | Mailbox paused | `mailbox_paused` | Mailbox auto-paused due to reputation threshold breach |
 | Sender domain not verified | `sender_domain_not_verified` | The mailbox's domain is neither the shared domain nor verified for your account. Also enforced at send time for queued and approved sends |
 | Autonomy level | `autonomy_level` | Mailbox autonomy level requires human approval for this send |
+| Quarantined attachment | `quarantined_attachment` | The send carries an attachment from a quarantined message (you need `operator` scope to attach one). It is held whatever the mailbox's autonomy level, and only a person can approve it: your key's approval is refused with `403 human_decision_required`, in every human-gate mode. You can still reject (withdraw) it. (Limit: in `off` mode, and `warn` with no deadline, a key can still release the safety quarantine the file came from, which frees the attachment; `enforce` closes that.) A person approves it for exactly the files the hold named |
 | Thread risk flagged | `thread_risk_flagged` | This is a reply (`threadId` set) on a thread whose inbound history was quarantined/rejected by the safety classifier, or scored high for prompt injection, so it's held for human approval instead of sent |
 | Content check | `content_check` | The outbound content check flagged the rendered email (a phishing-like request for credentials, codes or payment, another person's data or text leaked from another thread, deceptive claims, or clear spam), so it's held for human approval. Only on accounts enrolled in the content-check preview, and only once holds are switched on for it; off by default |
 | No verified domain | `no_verified_domain` | No verified domain available for sending |

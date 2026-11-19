@@ -41,6 +41,7 @@ Response:
   "queued": 1,
   "blocked": 1,
   "scheduled": 0,
+  "pendingApproval": 0,
   "errors": 0,
   "results": [
     { "recipientEmail": "alice@example.com", "requestId": "req_1", "status": "queued" },
@@ -49,7 +50,7 @@ Response:
 }
 ```
 
-Each result's `status` is `queued`, `scheduled` (with `scheduledAt`), `pending_approval` (held for a human, with `reason`), `blocked` (with `reason`) or `error` (an entry that couldn't be processed, e.g. `recipient_email_required`, `dedupe_key_required`, `duplicate_in_batch`). The top-level counts cover `queued`, `blocked`, `scheduled` and `errors`; a held item is in `results` only.
+Each result's `status` is `queued`, `scheduled` (with `scheduledAt`), `pending_approval` (held for a human, with `reason`), `blocked` (with `reason`) or `error` (an entry that couldn't be processed, e.g. `recipient_email_required`, `dedupe_key_required`, `duplicate_in_batch`). The top-level counts are `queued`, `blocked`, `scheduled`, `pendingApproval` and `errors`, and they add up to `total` (a batch held in full answers `pendingApproval` = `total`, with nothing failed).
 
 Every batch route (`batch/request-send`, `batch/classify-intent`, `batch/next-best-action`, `simulate-batch`) takes at most 500 items. Above that the whole request is a `400` with `{ "error": "batch_too_large", "field", "max": 500, "received" }` and nothing is processed; split it into batches of 500 or fewer.
 
