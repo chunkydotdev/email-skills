@@ -1,0 +1,37 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "molted",
+  "version": "0.3.0",
+  "description": "Wire Molted (agent-native email infrastructure) into an agent you're building: send/reply/read-inbox MCP tools, REST reference, and safe-default setup guidance.",
+  "author": {
+    "name": "Molted",
+    "url": "https://molted.email"
+  },
+  "homepage": "https://molted.email",
+  "repository": "https://github.com/chunkydotdev/email-skills",
+  "license": "MIT",
+  "keywords": ["email", "inbox", "agents", "mcp", "molted"],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "displayName": "Molted",
+        "shortDescription": "Give the agent you're building a real inbox",
+        "longDescription": "Send, reply, read and classify email from an agent you're building, with rate limits, suppressions, consent checks and prompt-injection screening built in. You sign in with your Molted account and choose which mailboxes the plugin can read or send from.",
+        "developerName": "Molted",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://molted.email",
+        "privacyPolicyURL": "https://molted.email/privacy",
+        "termsOfServiceURL": "https://molted.email/terms",
+        "defaultPrompt": [
+          "Use Molted to read my test inbox and summarize the new replies.",
+          "Use Molted to add email sending to the agent I'm building."
+        ],
+        "brandColor": "#000000",
+        "composerIcon": "./logo.png",
+        "logo": "./logo.png"
+      }
+    }
+  }
+}

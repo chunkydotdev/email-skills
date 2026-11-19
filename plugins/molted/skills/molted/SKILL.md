@@ -24,13 +24,14 @@ isn't Molted-specific, see the other skills in this repo (`skills/deliverability
 
 ## Two ways to integrate
 
-**MCP (recommended for an agent you're building with Claude, or any MCP-capable runtime).**
-This plugin ships a `molted` MCP server (`plugins/molted/.mcp.json`) pointed at
-`https://mcp.molted.email/mcp`, authenticated with the API key saved in the plugin's `api_key`
-option (Claude Code sends it as the `Authorization: Bearer` header). By default it exposes the
-`core` toolset (send, reply, read-inbox, search, classify, contacts, lists, and more); journeys,
-segments and the rest are opt-in toolsets (https://molted.email/docs/mcp-server#toolsets). Run
-`/molted:setup` first to save a key. Tool names are namespaced:
+**MCP (recommended for an agent you're building with Claude, Codex, or any MCP-capable runtime).**
+This plugin ships a `molted` MCP server pointed at `https://mcp.molted.email/mcp`. The user signs
+in with OAuth: their client opens molted.email in a browser, they pick which mailboxes the plugin
+may read or send from, and the client keeps the token. No API key changes hands. By default the
+server exposes the `core` toolset (send, reply, read-inbox, search, classify, contacts, lists, and
+more); journeys, segments and the rest are opt-in toolsets
+(https://molted.email/docs/mcp-server#toolsets). Run the plugin's `setup` skill (`/molted:setup`
+in Claude Code) to check the connection. In Claude Code, tool names are namespaced:
 `mcp__plugin_molted_molted__<tool-name>` (e.g. `mcp__plugin_molted_molted__send_email`).
 
 **REST (for anything that isn't an MCP-capable agent, e.g. a backend service, a cron job, or an
@@ -42,22 +43,29 @@ own config or secret store, not from this plugin. The full endpoint reference is
 Both paths hit the same policy engine and the same account, so you can mix them (e.g. MCP for the
 agent loop, REST from a webhook handler).
 
-## Auth in three steps
+## Auth
+
+**For the plugin's MCP server: sign in, no key.**
 
 1. **Get an account.** Signup is self-serve:
    `https://molted.email/signup?utm_source=claude-code-plugin`.
-2. **Get an API key.** Portal (Settings > Access) or CLI:
-   `molted auth keys create --label claude-code --mailbox mbx_... --permissions read`.
-   Keys are mailbox-scoped with a `permissions` list (`read`, `send`, or both).
-3. **Save it in the plugin** with `/plugin configure molted@email-skills` (masked input, stored in
-   the system keychain). Never paste it into a chat. Then run `/reload-plugins`.
+2. **Sign in from the client.** Claude Code: `/mcp`, pick the Molted server, **Authenticate**.
+   Codex: sign in when the plugin asks during install.
+3. **Approve on molted.email.** Choose **Specific mailboxes** and give each one **read** only, unless
+   the agent should send. Approving creates a `(connected app)` key in Settings > Access; revoking
+   it disconnects the plugin.
 
-**Default to a read-only key** (`--permissions read`) for anything that's just reading a test
-inbox, classifying replies, or drafting. That makes sending impossible server-side - the safest
-default for a new integration. Add `send` only once you actually want the agent sending mail, and
-treat that as a deliberate opt-in, not the default. See `/molted:setup` in this plugin for a guided
-walkthrough, including a `permissions.deny` snippet to block send-capable tools client-side if you
-want dry-run behavior without any chance of a real send.
+**Default to read-only access** for anything that's just reading a test inbox, classifying replies,
+or drafting. That makes sending impossible server-side - the safest default for a new integration.
+Add `send` only once you actually want the agent sending mail, and treat that as a deliberate
+opt-in, not the default. The `setup` skill in this plugin has a guided walkthrough, including a
+client-side snippet to block send-capable tools if you want dry-run behavior without any chance of
+a real send.
+
+**For REST, or a headless MCP client that can't open a browser: an API key.** Portal (Settings >
+Access) or CLI: `molted auth keys create --label my-agent --mailbox mbx_... --permissions read`.
+Keys are mailbox-scoped with a `permissions` list (`read`, `send`, or both). The service reads the
+key from its own config or secret store. Never paste one into a chat.
 
 `dry_run` (the `simulate-send` / `simulate-batch` endpoints, or the `dry_run` MCP tool) needs
 `send` permission even though it never actually sends - it runs the real policy engine and reports
@@ -121,9 +129,8 @@ Worth knowing up front: `reference/quick-reference.md` (endpoint table), `refere
 `reference/suppression-management.md`, `reference/multi-agent-coordination.md` (if more than one
 agent shares a mailbox).
 
-## Codex
+## Claude Code and Codex
 
-Codex's plugin format forbids secrets and variable substitution in MCP headers (auth is the
-client's job, through OAuth), so this plugin doesn't support Codex until Molted's MCP server
-offers OAuth sign-in. Codex can still connect to the server from the user's own Codex config;
-https://molted.email/docs/mcp-server has the setup. REST works from a Codex-driven agent too.
+The same plugin installs in both. Claude Code reads `.claude-plugin/plugin.json` and `.mcp.json`;
+Codex reads the portable `plugin.json` and `mcp.json` (Agent Plugins format). Both point at the
+same server and sign in with OAuth, and both load this skill and the `setup` skill.

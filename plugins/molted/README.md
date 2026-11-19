@@ -1,4 +1,4 @@
-# Molted (Claude Code plugin)
+# Molted (Claude Code and Codex plugin)
 
 Wire [Molted](https://molted.email) (agent-native email infrastructure) into an agent you're
 building: send, reply, read-inbox, and classify-inbound as MCP tools, a REST reference for
@@ -6,43 +6,60 @@ anything that isn't MCP-capable, and safe-default setup guidance.
 
 ## Install
 
+**Claude Code:**
+
 ```
 /plugin marketplace add chunkydotdev/email-skills
 /plugin install molted@email-skills
 ```
 
-Installing from `/plugin` asks for your Molted API key in a masked field. Then run
-`/molted:setup` for a guided walkthrough (checking the connection, choosing a permission level).
+Then run `/mcp`, pick the Molted plugin's server, and choose **Authenticate** to sign in. Run
+`/molted:setup` any time for a guided check.
+
+**Codex** (Codex CLI or the ChatGPT desktop app):
+
+```bash
+codex plugin marketplace add chunkydotdev/email-skills
+```
+
+Then install **Molted** from the plugin browser (`/plugins` in Codex CLI, or the **Plugins** tab in
+the ChatGPT desktop app) and sign in when it asks.
 
 ## Setup
 
 1. Get a Molted account. Signup is self-serve:
    `https://molted.email/signup?utm_source=claude-code-plugin`.
-2. Create an API key: portal (Settings > Access), or CLI
-   `molted auth keys create --label claude-code --mailbox mbx_... --permissions read`.
-3. Save it in the plugin: the install dialog asks for it, or run
-   `/plugin configure molted@email-skills` at any time. The key is a sensitive option, so Claude
-   Code stores it in your system keychain (not `settings.json`) and sends it only as the
-   `Authorization: Bearer` header to `https://mcp.molted.email/mcp`. **Never paste it into a chat.**
-4. Run `/reload-plugins` (or start a new session).
-5. Run `/molted:setup` to confirm the connection and see the permission-level tradeoffs.
+2. Sign in from your client (see Install). A browser opens on molted.email.
+3. On the approval page, pick the workspace, choose **Specific mailboxes**, and give each one
+   **read** only, unless you want the agent to send. Approving creates an API key labelled
+   `<app name> (connected app)` in Settings > Access; revoke it to disconnect the plugin.
 
-Upgrading from 0.1.x: the plugin no longer reads a `MOLTED_API_KEY` environment variable. Save the
-key with `/plugin configure molted@email-skills`, then you can drop the export.
+The plugin never sees a key: your client stores the OAuth token itself. **Never paste a Molted API
+key into a chat.**
+
+Non-interactive runs (`claude -p`, the Agent SDK, CI) can't open a browser. Sign in once from an
+interactive session first, or connect the server outside the plugin with an API key in your own
+config ([MCP server docs](https://molted.email/docs/mcp-server)).
+
+### Upgrading from 0.2.x
+
+0.3.0 drops the API key option. Claude Code connects with OAuth now, so after the update run
+`/mcp` and **Authenticate** once. The key you saved with `/plugin configure` is no longer used; if
+nothing else uses it, revoke it in Settings > Access.
 
 ## Safe defaults
 
-- **Read-only by default.** A mailbox-scoped key with `--permissions read` makes sending
-  impossible server-side. That's the recommended default for anything that's just reading a test
+- **Read-only by default.** Give the plugin **read** on specific mailboxes. That makes sending
+  impossible server-side, which is the recommended default for anything that's just reading a test
   inbox, classifying replies, or drafting.
-- **Sending is an explicit opt-in.** Create a `read,send` key only once you actually want the
+- **Sending is an explicit opt-in.** Tick **send** for a mailbox only once you actually want the
   agent to send mail.
 - **Dry-run needs `send` permission**, even though it never sends - it runs the real policy engine
   (rate limits, suppressions, consent) and reports what would happen, which requires the `send`
   scope server-side.
-- **Client-side belt-and-suspenders.** A plugin can't enforce tool restrictions itself (Claude
-  Code only lets it suggest settings; enforcement lives in your own `settings.json`). If you want
-  a `read,send` key but still want to block sending client-side, add:
+- **Client-side belt-and-suspenders.** A plugin can't enforce tool restrictions itself; that lives
+  in your own config. To keep send permission but still block sending in Claude Code, add this to
+  your own (project or user) `settings.json`:
 
   ```json
   {
@@ -58,7 +75,8 @@ key with `/plugin configure molted@email-skills`, then you can drop the export.
   }
   ```
 
-  to your own (project or user) `settings.json`.
+  In Codex, set `default_tools_approval_mode = "prompt"` under
+  `[plugins."molted".mcp_servers.molted]` in `~/.codex/config.toml` to approve each call.
 
 ## What the tools do
 
@@ -69,15 +87,21 @@ opt-in [toolsets](https://molted.email/docs/mcp-server#toolsets). Full list and 
 [`molted` skill](skills/molted/SKILL.md) and its `reference/` (generated from the live
 [`molted.email/skill.md`](https://molted.email/skill.md)).
 
-Tool names are namespaced as `mcp__plugin_molted_molted__<tool-name>` (e.g.
+In Claude Code, tool names are namespaced as `mcp__plugin_molted_molted__<tool-name>` (e.g.
 `mcp__plugin_molted_molted__send_email`) - useful for permission rules or hook matchers.
 
-## Codex
+## Layout
 
-Not supported yet. Codex's plugin format forbids secrets and variable substitution in MCP headers
-(auth is the client's job, through OAuth), so this plugin is Claude Code only until Molted's MCP
-server offers OAuth sign-in. Codex can still connect to the server from your own Codex config; see
-[the MCP server docs](https://molted.email/docs/mcp-server).
+One directory serves both clients:
+
+| File | Read by |
+| --- | --- |
+| `.claude-plugin/plugin.json`, `.mcp.json` | Claude Code |
+| `plugin.json`, `mcp.json` ([Agent Plugins](https://agent-plugins.org/specification) format, OpenAI settings under `extensions.com.openai`) | Codex |
+| `skills/molted`, `skills/setup` | both |
+
+The marketplaces live at the repo root: `.claude-plugin/marketplace.json` (Claude Code) and
+`.agents/plugins/marketplace.json` (Codex). **Bump `version` in both `plugin.json` files together.**
 
 ## License
 
