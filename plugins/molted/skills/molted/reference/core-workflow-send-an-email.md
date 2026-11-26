@@ -106,7 +106,7 @@ Every send is checked against these rules (in order). If any fails, the send is 
 
 | Rule | Block Reason | Description |
 |------|-------------|-------------|
-| Tenant paused | `tenant_paused` | Emergency pause is active |
+| Tenant paused | `tenant_paused` | Emergency pause is active. New sends are refused; a send already queued or scheduled waits (retried every 15 minutes) and goes out on resume, or its status becomes `failed` after 72 hours (no event or webhook is published for that). The same holds for `mailbox_paused` and `free_sends_paused` |
 | Trial not activated | `trial_not_activated` | Trial plan not activated for sending |
 | Subscription expired | `subscription_expired` | Subscription has expired |
 | Free sending paused | `free_sends_paused` | Molted has paused sending for every Free-plan account (an operator stop during abuse on the shared infrastructure). Not about this send: retry later with a new `dedupeKey`. Paid plans are unaffected; journey steps and follow-ups wait and retry on their own |
@@ -144,7 +144,7 @@ Every send is checked against these rules (in order). If any fails, the send is 
 | Sender domain not verified | `sender_domain_not_verified` | The mailbox's domain is neither the shared domain nor verified for your account. Also enforced at send time for queued and approved sends |
 | Autonomy level | `autonomy_level` | Mailbox autonomy level requires human approval for this send |
 | Quarantined attachment | `quarantined_attachment` | The send carries an attachment from a quarantined message (you need `operator` scope to attach one). It is held whatever the mailbox's autonomy level, and only a person can approve it: your key's approval is refused with `403 human_decision_required`, in every human-gate mode. You can still reject (withdraw) it. (Limit: in `off` mode, and `warn` with no deadline, a key can still release the safety quarantine the file came from, which frees the attachment; `enforce` closes that.) A person approves it for exactly the files the hold named |
-| Thread risk flagged | `thread_risk_flagged` | This is a reply (`threadId` set) on a thread whose inbound history was quarantined/rejected by the safety classifier, or scored high for prompt injection, so it's held for human approval instead of sent |
+| Thread risk flagged | `thread_risk_flagged` | This is a reply (`threadId` set) on a thread where, in the last 7 days, a classified inbound message was quarantined or rejected (by the safety classifier or by a person) or rated high for prompt injection. Every classified inbound message in the thread from the last 7 days counts, including the one that started it. The hold stays for the rest of those 7 days even after a person releases the message. So it's held for human approval instead of sent |
 | Content check | `content_check` | The outbound content check flagged the rendered email (a phishing-like request for credentials, codes or payment, another person's data or text leaked from another thread, deceptive claims, or clear spam), so it's held for human approval. Only on accounts enrolled in the content-check preview, and only once holds are switched on for it; off by default |
 | No verified domain | `no_verified_domain` | No verified domain available for sending |
 

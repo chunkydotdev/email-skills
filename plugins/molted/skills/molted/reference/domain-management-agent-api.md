@@ -66,7 +66,7 @@ When the parent `status` is terminal (`failed` or `verified`), per-record `dnsRe
 
 Check if the user's DNS provider supports one-click setup via the [Domain Connect](https://www.domainconnect.org/) protocol. If supported, returns a redirect URL the user can click to automatically configure all DNS records — no manual copy-pasting required.
 
-Supported providers include Cloudflare, Vercel, and other Domain Connect-compatible providers.
+One-click only shows where the DNS provider holds Molted's Domain Connect template at version 2 or newer: Cloudflare does; Vercel holds an older copy (version 1) and GoDaddy holds none, so those get `supported: false`. A Domain Connect provider is not enough on its own.
 
 ```
 GET /v1/agent/domains/:domainId/domain-connect
@@ -88,7 +88,9 @@ If not supported:
 }
 ```
 
-Other `reason` values: `Domain is already verified`, `Domain Connect is not configured`, `Could not fetch provider settings`, `Could not map DNS records to template variables`.
+Other `reason` values: `Domain is already verified`, `Domain Connect is not configured`, `Could not fetch provider settings`; the provider does not have Molted's one-click template, or has an out-of-date copy (below version 2); we could not check whether the provider has the template (the query failed, timed out or was not readable); and `The one-click link is not offered because ...`, which names what the domain's records lack or have in a shape the template cannot write: a missing DKIM, SPF `include`, outbound MX or inbound MX, an SPF that is a CNAME, a DKIM that is not a TXT, a record not on its fixed name (`resend._domainkey`, `send`, the domain itself), or an MX host Molted does not recognise (`inbound-smtp.<region>.amazonaws.com`, `receive.forge.rmta.net` and regional forms like `receive-euw1.forge.rmta.net`). Add the records by hand in each case.
+
+**What the link writes, and when it is refused.** The provider writes five records: DKIM, SPF and an MX on `send`, a DMARC record (`v=DMARC1; p=none;`) on `_dmarc`, and the inbound MX on the domain itself. Any TXT already on `_dmarc` and any MX already on the domain is replaced, and a provider may not warn first. So before offering the link we look at the domain's DNS and answer `supported: false`, with `existingRecords: true` and a `reason` naming the record, when `_dmarc.<domain>` already has a TXT record or CNAME, when the domain has an MX that is not Molted's inbound host, or when the domain is a subdomain where any parent domain (up to the organisational domain) publishes a DMARC record whose policy for subdomains is `quarantine` or `reject` (a `p=none` record on the subdomain would override it; do not publish one there, add the `dmarc.rua` address to the parent's `rua=` tag). If we cannot look the records up, the answer is also `supported: false`. In every one of these cases add the records by hand, and keep an existing DMARC record: add the `dmarc.rua` address to its `rua=` tag instead of publishing a second record (the `dmarc.ifRecordExists` field says the same).
 
 **Recommended flow:** If `supported` is `true`, send the `redirectUrl` to the user so they can approve DNS changes with a single click. After they approve, call the verify endpoint. If `supported` is `false`, share the DNS records from the domain details and guide the user through manual setup.
 
