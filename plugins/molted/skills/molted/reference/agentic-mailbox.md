@@ -259,7 +259,7 @@ Every message (and every `envelopedMessages[].metadata`) carries `platformLabel`
 
 ### Get Raw MIME
 
-Retrieve the raw provider response for an inbound message as stored at ingest time (e.g. the full Resend API response JSON, not RFC 2822 MIME). Useful for compliance, forensics, or custom parsing.
+Retrieve the raw provider response for an inbound message as stored at ingest time (e.g. the full Resend API response JSON, not RFC 2822 MIME), with the provider's own download links and their expiry removed; the subject, bodies and headers are untouched, so a link the sender put in the message is still there. Useful for compliance, forensics, or custom parsing.
 
 ```
 GET /v1/agent/messages/:id/raw
@@ -343,7 +343,7 @@ Restore is conditionally gated (#1722): restoring a thread a human rejected (`ov
 
 ### Permanently Delete Thread
 
-Permanently removes a trashed thread and all its messages. This cannot be undone. Only a thread already in the trash can be deleted (`404` otherwise; trash it first with `POST /v1/agent/threads/trash`). Needs `manage` on the thread's mailbox. **CLI:** `molted threads delete <id>`.
+Permanently removes a trashed thread and all its messages, including the received mail's stored copies and classification records and the files that came with it (they stop being downloadable at once and the stored copies are removed by the daily cleanup; a file that a send of yours still uses is kept for that send). This cannot be undone. Only a thread already in the trash can be deleted (`404` otherwise; trash it first with `POST /v1/agent/threads/trash`). Needs `manage` on the thread's mailbox. **CLI:** `molted threads delete <id>`.
 
 ```
 DELETE /v1/agent/threads/:id/permanent

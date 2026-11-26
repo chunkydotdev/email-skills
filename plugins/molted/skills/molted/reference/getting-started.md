@@ -282,6 +282,10 @@ Content-Type: application/json
 
 The response sets a session cookie. Include it in the next request.
 
+Optionally add `"foundVia"` to the body: a short phrase for how you found Molted, such as the
+search or the request that led here (at most 500 characters). Leave out anything personal. It
+is optional and stored with the account; nothing else depends on it.
+
 ### Create your API key
 
 ```
